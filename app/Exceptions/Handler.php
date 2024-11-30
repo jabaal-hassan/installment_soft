@@ -2,7 +2,10 @@
 
 namespace App\Exceptions;
 
+use App\Constants\Messages;
+use App\Helpers\Helpers;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Http\Response;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -32,10 +35,8 @@ class Handler extends ExceptionHandler
      *
      * @return void
      */
-    public function register()
+    public function render($request, Throwable $exception)
     {
-        $this->reportable(function (Throwable $e) {
-            //
-        });
+        Helpers::error($request, Messages::ExceptionMessage, $exception, Response::HTTP_INTERNAL_SERVER_ERROR);
     }
 }
