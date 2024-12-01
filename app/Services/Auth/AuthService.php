@@ -46,12 +46,17 @@ class AuthService
                 return Helpers::result(Messages::InvalidCredentials, Response::HTTP_UNAUTHORIZED);
             }
             $user = Auth::user();
+            // Get user's roles and permissions
+            $roles = $user->getRoleNames();
+            $permissions = $user->getAllPermissions()->pluck('name');
 
             $response = [
                 'token' => Helpers::respondWithToken($token)['token'],
                 'user' => [
                     'name' => $user->name,
                     'email' => $user->email,
+                    'roles' => $roles,
+                    'permissions' => $permissions,
                 ],
             ];
             return Helpers::result('Login Successfully', Response::HTTP_OK, $response);
