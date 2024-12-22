@@ -35,6 +35,7 @@ class User extends Authenticatable implements JWTSubject
         'name',
         'email',
         'password',
+        'remember_token',
     ];
 
     /**
@@ -55,4 +56,8 @@ class User extends Authenticatable implements JWTSubject
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+    public function employee()
+    {
+        return $this->hasOne(Employee::class);
+    }
 }
