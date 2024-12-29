@@ -25,7 +25,9 @@ class EmployeeRequest extends BaseRequest
     {
         return [
             // User validation rules
+            'branch_id' => 'nullable|exists:branches,id',
             'name' => 'required|string|max:255',
+            'father_name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'role' => 'required|string|exists:roles,name',
 

@@ -5,21 +5,24 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Employee extends Model
+class Branch extends Model
 {
-
     use HasFactory;
-    protected $guarded = [];
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
+
+    protected $fillable = [
+        'name',
+        'address',
+        'city',
+        'company_id'
+    ];
+
     public function company()
     {
         return $this->belongsTo(Company::class);
     }
-    public function branch()
+
+    public function employees()
     {
-        return $this->belongsTo(Branch::class);
+        return $this->hasMany(Employee::class);
     }
 }

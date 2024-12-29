@@ -18,9 +18,13 @@ class RolesAndPermissionsSeeder extends Seeder
     {
         // Clear cached roles and permissions
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
-
         // List of all permissions
         $permissions = [
+            'User can add companyAdmin',
+            'User can update companyAdmin',
+            'User can delete companyAdmin',
+            'User can get companyAdmin',
+            'User can count companyAdmin',
             'User can add branchAdmin',
             'User can update branchAdmin',
             'User can delete branchAdmin',
@@ -65,6 +69,58 @@ class RolesAndPermissionsSeeder extends Seeder
 
         // Super Admin Role
         $superAdmin = Role::firstOrCreate(['name' => 'admin']);
+        $superAdmin->syncPermissions($permissions);
+
+        // List of all permissions
+        $permissions = [
+            'User can add company',
+            'User can update company',
+            'User can delete company',
+            'User can get company',
+            'User can add branchAdmin',
+            'User can update branchAdmin',
+            'User can delete branchAdmin',
+            'User can get branchAdmin',
+            'User can count branchAdmin',
+            'User can add employees',
+            'User can add users (employee)',
+            'User can get employees',
+            'User can manage all users (delete)',
+            'User can manage all users (update)',
+            'User can delete customers',
+            'User can update customers',
+            'User can add customers',
+            'User can delete products',
+            'User can update products',
+            'User can add products',
+            'User can delete sales',
+            'User can update sales',
+            'User can add sales',
+            'User can delete installments',
+            'User can update installments',
+            'User can add installments',
+            'User can see all installments',
+            'User can see customer installments',
+            'User can see all sales',
+            'User can see customer sales',
+            'User can see monthly sales',
+            'User can see daily sales',
+            'User can see all employee',
+            'User can see all employee count',
+            'User can get salary invoice',
+            'User can see Attendance Records',
+            'User can count products',
+            'User can get daily sales count',
+            'User can update their info',
+        ];
+
+        // Create all permissions
+        foreach ($permissions as $permission) {
+            Permission::firstOrCreate(['name' => $permission]);
+        }
+
+        // Super Admin Role
+        $superAdmin = Role::firstOrCreate(['name' => 'company admin']);
         $superAdmin->syncPermissions($permissions);
 
         // Branch Admin Role

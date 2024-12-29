@@ -8,9 +8,10 @@ use App\Http\Controllers\Controller;
 use App\Services\Admin\AdminService;
 use App\Http\Requests\Admin\EmployeeRequest;
 use App\Http\Requests\Admin\PasswordRequest;
-use App\Http\Requests\Admin\DepartmentRequest;
 use App\Http\Requests\Admin\UpdateUserRequest;
+use App\Http\Requests\Admin\StoreCompanyRequest;
 use App\Http\Requests\Admin\UpdateEmployeeRequest;
+use App\Http\Requests\Admin\BranchRequest;
 
 class AdminController extends Controller
 {
@@ -19,6 +20,23 @@ class AdminController extends Controller
     public function __construct(AdminService $adminService)
     {
         $this->adminService = $adminService;
+    }
+
+    public function storeCompany(StoreCompanyRequest $request): JsonResponse
+    {
+        return $this->adminService->storeCompany($request);
+    }
+    public function getallcompany()
+    {
+        return $this->adminService->getallcompany();
+    }
+    public function getcompany($id)
+    {
+        return $this->adminService->getcompany($id);
+    }
+    public function fetchCompanyEmployees($companyName, Request $request)
+    {
+        return $this->adminService->getCompanyEmployees($companyName, $request);
     }
 
     public function addEmployee(EmployeeRequest $request): JsonResponse
@@ -32,10 +50,10 @@ class AdminController extends Controller
         return $this->adminService->passwordSetup($data);
     }
 
-    public function getEmployees(Request $request, $phone_number)
+    public function getEmployees(Request $request, $id)
     {
-        return $this->adminService->getEmployees($request, $phone_number);
-    }    
+        return $this->adminService->getEmployees($request, $id);
+    }
 
     public function deleteUser(Request $request, $user_id): JsonResponse
     {
@@ -48,13 +66,28 @@ class AdminController extends Controller
         return $this->adminService->updateEmployee($request, $employee_id);
     }
 
-    public function getAllEmployees(Request $request): JsonResponse
+    public function getAllEmployees(): JsonResponse
     {
-        return $this->adminService->getAllEmployees($request);
+        return $this->adminService->getAllEmployees();
     }
 
-    public function updateUser(UpdateUserRequest $request): JsonResponse
+    public function storeBranch(BranchRequest $request): JsonResponse
     {
-        return $this->adminService->updateUser($request);
+        return $this->adminService->storeBranch($request);
+    }
+
+    public function getBranchEmployees($branch_id)
+    {
+        return $this->adminService->getBranchEmployees($branch_id);
+    }
+
+    public function getBranch($branch_id)
+    {
+        return $this->adminService->getBranch($branch_id);
+    }
+
+    public function getBranches()
+    {
+        return $this->adminService->getAllBranches();
     }
 }

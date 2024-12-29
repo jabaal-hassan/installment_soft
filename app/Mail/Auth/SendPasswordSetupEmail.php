@@ -3,41 +3,54 @@
 namespace App\Mail\Auth;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Queue\SerializesModels;
 
-class SendPasswordSetupEmail extends Mailable implements ShouldQueue
+class SendPasswordSetupEmail extends Mailable
 {
     use Queueable, SerializesModels;
-
-    /**
-     * Create a new message instance.
-     *
-     * @return void
-     */
 
     public $user;
     public $token;
     public $setupUrl;
+
     public function __construct($user, $token)
     {
         $this->user = $user;
         $this->token = $token;
-        // $this->setupUrl = url('/password-setup?email=' . urlencode($user->email) . '&token=' . $token);
-        $this->setupUrl = env('FRONTEND_URL') . '/password-setup?email=' . urlencode($user->email) . '&token=' . $user->remember_token;
-        // $this->setupUrl = env('FRONTEND_URL') . '/password-setup?email=' . urlencode($user->email) . '&token=' . $token;
+
+        // Get frontend URL with strict default
+        $frontendUrl = env('FRONTEND_URL');
+
+        // Force a default if env is empty or malformed
+        if (empty($frontendUrl) || !parse_url($frontendUrl)) {
+            $frontendUrl = 'http://localhost:5173';
+            Log::info('Using default frontend URL: ' . $frontendUrl);
+        }
+
+        // Ensure URL has protocol
+        if (!preg_match('~^(?:f|ht)tps?://~i', $frontendUrl)) {
+            $frontendUrl = 'http://' . $frontendUrl;
+        }
+
+        // Clean the URL
+        $frontendUrl = rtrim($frontendUrl, '/');
+
+        // Debug line
+        Log::info('Frontend URL: ' . $frontendUrl);
+
+        $this->setupUrl = $frontendUrl . '/password-setup?email=' . urlencode($user->email) . '&token=' . $token;
+
+        // Debug line
+        Log::info('Final Setup URL: ' . $this->setupUrl);
     }
 
     public function build()
     {
-        return $this->view('password_setup')
-            ->subject('Set up your password')
-            ->with([
-                'user' => $this->user,
-                'setupUrl' => $this->setupUrl,
-            ]);
+        Log::info('Building email with setup URL: ' . $this->setupUrl);
+
+        return $this->view('emails.password_setup')
+            ->subject('Set up your password');
     }
 }
