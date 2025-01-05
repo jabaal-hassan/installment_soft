@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Inventory\InventoryController;
 
 /*
 |--------------------------------------------------------------------------
@@ -23,6 +24,7 @@ Route::group(['middleware' => ['api', 'log.request', 'log.activity']], function 
         Route::post('logout', 'logout');
         Route::post('refresh', 'refresh');
         Route::get('profile', 'profile');
+        Route::post('send-password-reset-link', 'sendPasswordResetLink');
     });
 
     // Admin Routes
@@ -52,6 +54,22 @@ Route::group(['middleware' => ['api', 'log.request', 'log.activity']], function 
             // User Management
             Route::delete('delete-user/{user_id}', 'deleteUser');
             Route::get('get-company/{id}', 'getcompany');
+
+            // Inventory Management
+            Route::controller(InventoryController::class)->group(function () {
+                Route::get('get-all-categories', 'getAllCategories');
+                Route::get('get-category/{id}', 'getCategoryById');
+                Route::get('get-all-brands', 'getAllBrands');
+                Route::get('get-brand/{id}', 'getBrandById');
+                Route::get('get-brands-by-category/{categoryName}', 'getBrandsByCategoryName');
+                Route::post('store-inventory', 'storeInventory');
+                Route::put('update-inventory/{id}', 'updateInventory');
+                Route::delete('delete-inventory/{id}', 'deleteInventory');
+                Route::get('get-all-inventory', 'getAllInventory');
+                Route::get('get-inventory/{id}', 'getInventoryById');
+                Route::get('get-inventory-by-brand/{brandName}', 'getInventoryByBrandName');
+                Route::get('get-inventory-by-category/{categoryName}', 'getInventoryByCategoryName');
+            });
         });
 
         // Public Routes

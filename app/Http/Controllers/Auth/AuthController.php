@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Http\Controllers\Controller;
-use App\Http\Requests\Auth\RegisterRequest;
-use App\Http\Requests\Auth\LoginRequest;
-use App\Services\Auth\AuthService;
 use Illuminate\Http\JsonResponse;
+use App\Services\Auth\AuthService;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\LoginRequest;
+use App\Http\Requests\Auth\RegisterRequest;
+use App\Http\Requests\Admin\PasswordRequest;
+use Illuminate\Http\Request; // Correct import
 
 class AuthController extends Controller
 {
@@ -52,5 +54,15 @@ class AuthController extends Controller
     public function profile()
     {
         return $this->authService->profile();
+    }
+    /**
+     * Handle sending password reset link.
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function sendPasswordResetLink(Request $request): JsonResponse
+    {
+        return $this->authService->sendPasswordResetLink($request);
     }
 }
