@@ -206,7 +206,7 @@ class InventoryService
             }
 
             $brands = Brand::where('name', 'LIKE', "%{$brandName}%")->get();
-            
+
             if ($brands->isEmpty()) {
                 return Helpers::result('Brand not found', Response::HTTP_NOT_FOUND);
             }

@@ -23,11 +23,17 @@ class InventoryCreateDTO extends BaseDTOs
         $this->category_id = $request->category_id;
         $this->brand_id = $request->brand_id;
         $this->model = $request->model;
-        $this->serial_number = $request->serial_number;
+        $this->serial_number = $request->serial_number ?? $this->generateUniqueSerialNumber(); // Generate unique serial number if not provided
         $this->color = $request->color;
         $this->description = $request->description;
         $this->quantity = $request->quantity ?? 1; // Default to 1 if not provided
         $this->price = $request->price;
+    }
+
+    private function generateUniqueSerialNumber()
+    {
+        // Implement logic to generate a unique serial number
+        return uniqid();
     }
 
     public function toArray()
