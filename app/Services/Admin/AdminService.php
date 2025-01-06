@@ -253,7 +253,7 @@ class AdminService
             $admin = auth()->user()->employee;
 
             $companyId = $request->company_id ?? $admin->company_id;
-            $branchId = $request->branch_id ?? $admin->branch_id;
+            $branchId = $request->branch_id ?? ($admin->branch_id);
 
             $dto = new UserDTO($request->all());
             $user = User::create($dto->toArray());
@@ -261,7 +261,7 @@ class AdminService
             $user->assignRole($dto->role);
 
             // Pass the actual $request object instead of an array
-            $employeeDto = new EmployeeCreateDTO($request, $user->id, $companyId, $branchId);
+            $employeeDto = new EmployeeCreateDTO($request, $user->id, $companyId, $branchId ?? null); // Default to 0 if branchId is null
             $employee = Employee::create($employeeDto->toArray());
 
             SendPasswordSetupEmailJob::dispatch($user, $dto->remember_token);
@@ -458,6 +458,10 @@ class AdminService
                 'id' => $employee->id,
                 'user_id' => $employee->user_id,
                 'name' => $employee->user->name,
+                'email' => $employee->user->email,
+                'phone_number' => $employee->phone_number,
+                'id_card_number' => $employee->id_card_number,
+                'address' => $employee->address,
                 'father name' => $employee->father_name,
                 'position' => $employee->position,
                 'pay' => $employee->pay,

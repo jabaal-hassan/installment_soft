@@ -28,8 +28,9 @@ class EmployeeCreateDTO extends BaseDTOs
      * @param Request $request
      * @param int $userId
      * @param int $companyId
+     * @param ?int $branchId
      */
-    public function __construct(Request $request, int $userId, int $companyId, int $branchId)
+    public function __construct(Request $request, int $userId, int $companyId, ?int $branchId)
     {
         $this->user_id = $userId;
         $this->company_id = $companyId;
