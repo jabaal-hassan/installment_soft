@@ -4,7 +4,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Customer\CustomerController;
 use App\Http\Controllers\Inventory\InventoryController;
+use App\Http\Controllers\InstallmentPlan\InstallmentPlanController;
 
 /*
 |--------------------------------------------------------------------------
@@ -70,8 +72,34 @@ Route::group(['middleware' => ['api', 'log.request', 'log.activity']], function 
                 Route::get('get-inventory-by-brand/{brandName}', 'getInventoryByBrandName');
                 Route::get('get-inventory-by-category/{categoryName}', 'getInventoryByCategoryName');
             });
+
+            // Installment Plan Management
+            Route::controller(InstallmentPlanController::class)->group(function () {
+                Route::post('store-installment-plan', 'store');
+                Route::put('update-installment-plan/{id}', 'update');
+                Route::delete('delete-installment-plan/{id}', 'destroy');
+            });
+
+            // Customer Management
+            Route::controller(CustomerController::class)->group(function () {
+                Route::get('get-all-customers', 'index');
+                Route::get('get-branch-customers', 'getBranchCustomers');
+                Route::get('get-customer/{id}', 'show');
+                Route::delete('delete-customer/{id}', 'destroy');
+            });
         });
 
+        Route::middleware(['role:admin|company admin|branch admin|employee'])->group(function () {
+            // Customer Management
+            Route::controller(CustomerController::class)->group(function () {
+                Route::post('add-customer', 'store');
+                Route::put('update-customer/{id}', 'update');
+            });
+            Route::controller(InstallmentPlanController::class)->group(function () {
+                Route::get('get-all-installment-plans', 'index');
+                Route::get('get-installment-plan/{id}', 'show');
+            });
+        });
         // Public Routes
         Route::post('password-setup', 'passwordSetup');
     });
