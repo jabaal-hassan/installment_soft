@@ -30,9 +30,9 @@ class AdminController extends Controller
     {
         return $this->adminService->getallcompany();
     }
-    public function getcompany($id)
+    public function getcompany()
     {
-        return $this->adminService->getcompany($id);
+        return $this->adminService->getcompany();
     }
     public function fetchCompanyEmployees($companyName, Request $request)
     {

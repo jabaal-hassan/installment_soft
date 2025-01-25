@@ -11,7 +11,7 @@ class InstallmentPlanCreateDTO extends BaseDTOs
     public string $plan_name;
     public ?string $city;
     public string $product_name;
-    public string $Product_model;
+    public string $product_model;
     public float $product_price;
     public float $advance;
     public ?float $percentage;
@@ -27,7 +27,7 @@ class InstallmentPlanCreateDTO extends BaseDTOs
         $this->city = $user->employee->branch->city ?? null;
 
         $this->product_name = $request->product_name;
-        $this->Product_model = $request->Product_model;
+        $this->product_model = $request->product_model;
         $this->product_price = $request->product_price;
 
         $this->advance = $request->advance;

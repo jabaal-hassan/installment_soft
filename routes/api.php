@@ -55,7 +55,7 @@ Route::group(['middleware' => ['api', 'log.request', 'log.activity']], function 
 
             // User Management
             Route::delete('delete-user/{user_id}', 'deleteUser');
-            Route::get('get-company/{id}', 'getcompany');
+            Route::get('get-company', 'getcompany');
 
             // Inventory Management
             Route::controller(InventoryController::class)->group(function () {

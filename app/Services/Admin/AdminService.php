@@ -81,9 +81,11 @@ class AdminService
 
     /************************************ get single company  ************************************/
 
-    public function getcompany($id)
+    public function getcompany()
     {
-        $company = Company::find($id);
+        $user = auth()->user();
+        $employee = $user->employee;
+        $company = Company::find($employee->company_id);
 
         if (!empty($company->logo)) {
             $company->logo = filter_var($company->logo, FILTER_VALIDATE_URL)
