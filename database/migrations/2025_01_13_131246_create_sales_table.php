@@ -17,6 +17,7 @@ return new class extends Migration
             $table->id();
             $table->string('item_name')->nullable();
             $table->foreignId('branch_id')->nullable()->constrained('branches')->onDelete('cascade');
+            $table->foreignId('sell_officer_id')->constrained('employees')->onDelete('cascade');
             $table->foreignId('category_id')->nullable()->constrained('categories')->onDelete('cascade'); // Add foreign key for category
             $table->foreignId('brand_id')->nullable()->constrained('brands')->onDelete('cascade'); // Add foreign key for brand
             $table->string('model')->nullable();
@@ -27,6 +28,7 @@ return new class extends Migration
             $table->decimal('price', 10, 2)->default(0.00)->nullable();
             $table->decimal('advance', 10, 2)->default(0.00)->nullable();
             $table->decimal('total_price', 10, 2);
+            $table->string('status')->default('pending');
             $table->softDeletes();
             $table->timestamps();
         });

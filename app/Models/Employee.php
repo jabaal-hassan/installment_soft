@@ -26,4 +26,12 @@ class Employee extends Model
     {
         return $this->hasMany(Customer::class);
     }
+    public function receivedInstallments()
+    {
+        return $this->hasMany(InstallmentTable::class, 'recived_officer_id');
+    }
+    public function sales()
+    {
+        return $this->hasMany(Sale::class, 'sell_officer_id');
+    }
 }

@@ -9,4 +9,9 @@ class InstallmentPlan extends Model
 {
     use HasFactory;
     protected $guarded = [];
+
+    public function customerAccounts()
+    {
+        return $this->hasMany(customerAccount::class);
+    }
 }

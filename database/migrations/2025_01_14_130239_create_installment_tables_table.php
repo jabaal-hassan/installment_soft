@@ -16,6 +16,8 @@ return new class extends Migration
         Schema::create('installment_tables', function (Blueprint $table) {
             $table->id();
             $table->foreignId('customer_id')->constrained('customers')->onDelete('cascade');
+            $table->foreignId('customer_account_id')->constrained('customer_accounts')->onDelete('cascade');
+            $table->foreignId('recived_officer_id')->constrained('employees')->onDelete('cascade');
             $table->string('product_name');
             $table->decimal('installment_price', 10, 2);
             $table->timestamps();

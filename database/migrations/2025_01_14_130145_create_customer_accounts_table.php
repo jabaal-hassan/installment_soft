@@ -24,6 +24,7 @@ return new class extends Migration
             $table->decimal('installment_total_price', 10, 2);
             $table->decimal('remaining_amount', 10, 2);
             $table->decimal('amount_paid', 10, 2)->default(0); // New column for amount paid by the customer
+            $table->string('status')->default('pending');
             $table->timestamps();
         });
     }

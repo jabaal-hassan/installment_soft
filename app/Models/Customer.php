@@ -14,8 +14,19 @@ class Customer extends Model
     {
         return $this->hasMany(Granter::class);
     }
+
     public function employee()
     {
         return $this->belongsTo(Employee::class);
+    }
+
+    public function customerAccounts()
+    {
+        return $this->hasMany(CustomerAccount::class);
+    }
+
+    public function installmentTables()
+    {
+        return $this->hasMany(InstallmentTable::class);
     }
 }
