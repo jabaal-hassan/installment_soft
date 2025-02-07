@@ -2,14 +2,17 @@
 
 namespace App\Services\Customer;
 
-use App\DTOs\CutomerDTOs\CustomerCreateDTO;
-use App\Models\Customer;
+use App\Models\Sale;
 use App\Models\Branch;
-use Illuminate\Support\Facades\DB;
 use App\Helpers\Helpers;
+use App\Models\Customer;
+use App\Models\Inventory;
 use App\Constants\Messages;
 use Illuminate\Http\Response;
+use App\DTOs\CustomerDTOs\SaleDTO;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use App\DTOs\CustomerDTOs\CustomerCreateDTO;
 
 class CustomerService
 {
@@ -49,6 +52,7 @@ class CustomerService
     public function createCustomer($request)
     {
         try {
+
             DB::beginTransaction();
 
             $user = auth()->user();
@@ -68,12 +72,25 @@ class CustomerService
                 }
             }
 
+            // Check if the product exists in the inventory
+            $inventory = Inventory::where('item_name', $request['item_name'])->where('model', $request->model)->first();
+            if (!$inventory) {
+                return Helpers::result('Product not found in inventory', Response::HTTP_BAD_REQUEST);
+            }
+            // Create SaleDTO and save the product to the sales table
+            $saleDTO = new SaleDTO($inventory, $employee);
+            $sale = Sale::create($saleDTO->toArray());
+
+            // Delete the product from the inventory
+            $inventory->delete();
+
             $customerDTO = new CustomerCreateDTO($request, $employee);
             $customer = Customer::create($customerDTO->toArray());
 
             DB::commit();
             return Helpers::result('Customer created successfully', Response::HTTP_CREATED, [
-                'customer' => $customer
+                'customer' => $customer,
+                'sale' => $sale
             ]);
         } catch (\Throwable $e) {
             DB::rollBack();

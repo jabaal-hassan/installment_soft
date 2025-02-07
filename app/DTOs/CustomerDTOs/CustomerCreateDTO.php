@@ -1,6 +1,6 @@
 <?php
 
-namespace App\DTOs\CutomerDTOs;
+namespace App\DTOs\CustomerDTOs;
 
 use App\DTOs\BaseDTOs;
 use Illuminate\Http\Request;
@@ -10,7 +10,8 @@ class CustomerCreateDTO extends BaseDTOs
 {
     public string $name;
     public string $father_name;
-    public int $employee_id;
+    public int $sell_officer_id;
+    public ?int $inquiry_officer_id;
     public ?int $branch_id;
     public string $phone_number;
     public string $cnic;
@@ -30,7 +31,8 @@ class CustomerCreateDTO extends BaseDTOs
     {
         $this->name = $request->name;
         $this->father_name = $request->father_name;
-        $this->employee_id = $employee->id;
+        $this->sell_officer_id = $employee->id;
+        $this->inquiry_officer_id = $employee->id;
         $this->branch_id = $request->branch_id ?? $employee->branch_id;
         $this->phone_number = $request->phone_number;
         $this->cnic = $request->cnic;
