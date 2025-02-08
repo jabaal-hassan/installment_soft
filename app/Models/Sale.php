@@ -10,6 +10,11 @@ class Sale extends Model
 {
     use HasFactory, SoftDeletes;
     protected $guarded = [];
+    
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class);
+    }
 
     public function branch()
     {

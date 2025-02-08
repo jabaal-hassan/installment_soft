@@ -16,6 +16,7 @@ return new class extends Migration
         Schema::create('sales', function (Blueprint $table) {
             $table->id();
             $table->string('item_name')->nullable();
+            $table->foreignId('customer_id')->constrained('customers')->onDelete('cascade');
             $table->foreignId('branch_id')->nullable()->constrained('branches')->onDelete('cascade');
             $table->foreignId('sell_officer_id')->constrained('employees')->onDelete('cascade');
             $table->foreignId('category_id')->nullable()->constrained('categories')->onDelete('cascade'); // Add foreign key for category

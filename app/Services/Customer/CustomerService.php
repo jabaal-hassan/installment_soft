@@ -13,6 +13,9 @@ use App\DTOs\CustomerDTOs\SaleDTO;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\DTOs\CustomerDTOs\CustomerCreateDTO;
+use App\Models\CustomerAccount;
+use App\DTOs\CustomerDTOs\CustomerAccountDTO;
+use App\Models\InstallmentPlan;
 
 class CustomerService
 {
@@ -72,25 +75,38 @@ class CustomerService
                 }
             }
 
-            // Check if the product exists in the inventory
-            $inventory = Inventory::where('item_name', $request['item_name'])->where('model', $request->model)->first();
+            $inventory = Inventory::where('item_name', $request->item_name)->where('model', $request->model)->first();
             if (!$inventory) {
                 return Helpers::result('Product not found in inventory', Response::HTTP_BAD_REQUEST);
             }
-            // Create SaleDTO and save the product to the sales table
-            $saleDTO = new SaleDTO($inventory, $employee);
-            $sale = Sale::create($saleDTO->toArray());
 
-            // Delete the product from the inventory
-            $inventory->delete();
 
+            // Create customer
             $customerDTO = new CustomerCreateDTO($request, $employee);
             $customer = Customer::create($customerDTO->toArray());
+
+            // Get installment plan details
+            $installmentPlan = InstallmentPlan::find($request->installment_plan_id);
+            if (!$installmentPlan) {
+                return Helpers::result('Product not found in installment Plan', Response::HTTP_BAD_REQUEST);
+            }
+
+            // Create customer account
+            $customerAccountDTO = new CustomerAccountDTO($request, $customer->id, $installmentPlan);
+            $customerAccount = CustomerAccount::create($customerAccountDTO->toArray());
+
+            // Create sale
+            $saleDTO = new SaleDTO($inventory, $installmentPlan, $customer->id, $employee);
+            $sale = Sale::create($saleDTO->toArray());
+
+            // Delete inventory
+            $inventory->delete();
 
             DB::commit();
             return Helpers::result('Customer created successfully', Response::HTTP_CREATED, [
                 'customer' => $customer,
-                'sale' => $sale
+                'sale' => $sale,
+                'customerAccount' => $customerAccount
             ]);
         } catch (\Throwable $e) {
             DB::rollBack();
