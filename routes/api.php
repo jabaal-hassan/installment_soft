@@ -47,6 +47,11 @@ Route::group(['middleware' => ['api', 'log.request', 'log.activity']], function 
             Route::get('get-employees/{phone_number}', 'getEmployees');
             Route::put('update-employee/{employee_id}', 'updateEmployee');
 
+            // Inquiry Officer Management
+            Route::post('add-inquiry-officer/{employee_id}', 'addInquiryOfficer');
+            Route::delete('delete-inquiry-officer/{inquiry_officer_id}', 'deleteInquiryOfficer');
+            Route::get('get-inquiry-officers', 'getInquiryOfficers');
+
             // Branch Management
             Route::post('add-branch', 'storeBranch');
             Route::get('/get-all-branches', 'getBranches');

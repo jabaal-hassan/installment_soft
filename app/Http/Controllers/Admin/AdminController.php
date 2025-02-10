@@ -90,4 +90,16 @@ class AdminController extends Controller
     {
         return $this->adminService->getAllBranches();
     }
+    public function addinquiryofficer($request)
+    {
+        return $this->adminService->addinquiryofficer($request);
+    }
+    public function getInquiryOfficers()
+    {
+        return $this->adminService->getAllInquiryOfficer();
+    }
+    public function deleteInquiryOfficer($request)
+    {
+        return $this->adminService->deleteInquiryOfficer($request);
+    }
 }

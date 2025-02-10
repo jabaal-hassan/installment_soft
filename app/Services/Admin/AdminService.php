@@ -3,21 +3,22 @@
 namespace App\Services\Admin;
 
 use App\Models\User;
+use App\Models\Branch;
 use App\Models\Company;
 use App\Helpers\Helpers;
 use App\Models\Employee;
 use App\DTOs\User\UserDTO;
 use App\Constants\Messages;
+use Illuminate\Support\Str;
 use App\DTOs\User\PasswordDTO;
+use App\Models\InquiryOfficer;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use App\Jobs\SendPasswordSetupEmailJob;
+use App\DTOs\BranchDTOs\BranchCreateDTO;
 use App\DTOs\EmployeeDTOs\EmployeeCreateDTO;
 use App\DTOs\EmployeeDTOs\EmployeeUpdateDTO;
 use Symfony\Component\HttpFoundation\Response;
-use Illuminate\Support\Str;
-use App\Models\Branch;
-use App\DTOs\BranchDTOs\BranchCreateDTO;
 
 
 class AdminService
@@ -490,5 +491,80 @@ class AdminService
         });
 
         return Helpers::result(Messages::EmployeesFetched, Response::HTTP_OK, $data);
+    }
+
+    /************************************ Add Inquiry Officer ************************************/
+
+    public function addInquiryOfficer($employeeId)
+    {
+        try {
+            $employee = Employee::find($employeeId);
+            if (!$employee) {
+                return Helpers::result('Employee not found', Response::HTTP_NOT_FOUND);
+            }
+
+            // Check if the employee is already an inquiry officer
+            $existingInquiryOfficer = InquiryOfficer::where('inquiry_officer_id', $employeeId)->first();
+            if ($existingInquiryOfficer) {
+                return Helpers::result('Employee is already an Inquiry Officer', Response::HTTP_CONFLICT);
+            }
+
+            $inquiryOfficer = InquiryOfficer::create([
+                'inquiry_officer_id' => $employeeId,
+            ]);
+
+            return Helpers::result('Inquiry Officer added successfully', Response::HTTP_OK, $inquiryOfficer);
+        } catch (\Throwable $e) {
+            return Helpers::error(null, 'An exception occurred', $e, Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /************************************ Get All Inquiry Officers ************************************/
+
+    public function getAllInquiryOfficer()
+    {
+        try {
+            $user = auth()->user();
+            $branchId = $user->employee->branch_id;
+
+            $inquiryOfficers = InquiryOfficer::whereHas('employee', function ($query) use ($branchId) {
+                $query->where('branch_id', $branchId);
+            })->with(['employee.user', 'employee.branch'])->get();
+            if ($inquiryOfficers->isEmpty()) {
+                return Helpers::result('No inquiry officers found', Response::HTTP_NOT_FOUND);
+            }
+
+            $data = $inquiryOfficers->map(function ($inquiryOfficer) {
+                return [
+                    'id' => $inquiryOfficer->id,
+                    'employee_id' => $inquiryOfficer->employee->id,
+                    'name' => $inquiryOfficer->employee->user->name,
+                    'branch_name' => $inquiryOfficer->employee->branch->name ?? 'N/A',
+                ];
+            });
+
+            return Helpers::result('Inquiry Officers fetched successfully', Response::HTTP_OK, $data);
+        } catch (\Throwable $e) {
+            return Helpers::error(null, 'An exception occurred', $e, Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /************************************ Delete Inquiry Officer ************************************/
+
+    public function deleteInquiryOfficer($employeeId)
+    {
+        try {
+            $inquiryOfficer = InquiryOfficer::where('inquiry_officer_id', $employeeId)->first();
+
+            if (!$inquiryOfficer) {
+                return Helpers::result('Inquiry Officer not found', Response::HTTP_NOT_FOUND);
+            }
+
+            $inquiryOfficer->delete();
+
+            return Helpers::result('Inquiry Officer deleted successfully', Response::HTTP_OK);
+        } catch (\Throwable $e) {
+            return Helpers::error(null, 'An exception occurred', $e, Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 }
