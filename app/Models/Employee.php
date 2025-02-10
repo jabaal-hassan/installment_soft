@@ -22,4 +22,24 @@ class Employee extends Model
     {
         return $this->belongsTo(Branch::class);
     }
+    public function customers()
+    {
+        return $this->hasMany(Customer::class);
+    }
+    public function receivedInstallments()
+    {
+        return $this->hasMany(InstallmentTable::class, 'recived_officer_id');
+    }
+    public function sales()
+    {
+        return $this->hasMany(Sale::class, 'sell_officer_id');
+    }
+    public function inquitryOfficers()
+    {
+        return $this->hasMany(InquiryOfficer::class, 'inquiry_officer_id');
+    }
+    public function recoveryOfficers()
+    {
+        return $this->hasMany(RecoveryOfficer::class, 'recovery_officer_id');
+    }
 }

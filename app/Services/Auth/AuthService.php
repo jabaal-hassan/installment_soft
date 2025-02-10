@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Jobs\SendPasswordResetLinkJob;
+use App\Jobs\SendPasswordSetupEmailJob;
 use Illuminate\Support\Facades\Password;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -98,9 +99,12 @@ class AuthService
                 return Helpers::result('User not found', Response::HTTP_NOT_FOUND);
             }
             $token = app('auth.password.broker')->createToken($user);
-            $resetUrl = url('/password/reset/' . $token);
 
-            SendPasswordResetLinkJob::dispatch($user, $resetUrl, $token);
+            // Save the token in the remember_token field
+            $user->remember_token = $token;
+            $user->save();
+
+            SendPasswordSetupEmailJob::dispatch($user, $token);
             return Helpers::result('Password reset link sent', Response::HTTP_OK);
         } catch (\Throwable $e) {
             return Helpers::error($request, Messages::ExceptionMessage, $e, Response::HTTP_INTERNAL_SERVER_ERROR);

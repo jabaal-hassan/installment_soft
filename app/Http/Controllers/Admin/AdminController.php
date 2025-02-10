@@ -30,9 +30,9 @@ class AdminController extends Controller
     {
         return $this->adminService->getallcompany();
     }
-    public function getcompany($id)
+    public function getcompany()
     {
-        return $this->adminService->getcompany($id);
+        return $this->adminService->getcompany();
     }
     public function fetchCompanyEmployees($companyName, Request $request)
     {
@@ -89,5 +89,17 @@ class AdminController extends Controller
     public function getBranches()
     {
         return $this->adminService->getAllBranches();
+    }
+    public function addinquiryofficer($request)
+    {
+        return $this->adminService->addinquiryofficer($request);
+    }
+    public function getInquiryOfficers()
+    {
+        return $this->adminService->getAllInquiryOfficer();
+    }
+    public function deleteInquiryOfficer($request)
+    {
+        return $this->adminService->deleteInquiryOfficer($request);
     }
 }
