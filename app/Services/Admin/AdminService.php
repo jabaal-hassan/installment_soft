@@ -12,6 +12,7 @@ use App\Constants\Messages;
 use Illuminate\Support\Str;
 use App\DTOs\User\PasswordDTO;
 use App\Models\InquiryOfficer;
+use App\Models\RecoveryOfficer;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use App\Jobs\SendPasswordSetupEmailJob;
@@ -563,6 +564,81 @@ class AdminService
             $inquiryOfficer->delete();
 
             return Helpers::result('Inquiry Officer deleted successfully', Response::HTTP_OK);
+        } catch (\Throwable $e) {
+            return Helpers::error(null, 'An exception occurred', $e, Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /************************************ Add Recovery Officer ************************************/
+
+    public function addRecoveryOfficer($employeeId)
+    {
+        try {
+            $employee = Employee::find($employeeId);
+            if (!$employee) {
+                return Helpers::result('Employee not found', Response::HTTP_NOT_FOUND);
+            }
+
+
+            $existingRecoveryOfficer = RecoveryOfficer::where('Recovery_officer_id', $employeeId)->first();
+            if ($existingRecoveryOfficer) {
+                return Helpers::result('Employee is already an Recovery Officer', Response::HTTP_CONFLICT);
+            }
+
+            $recoveryOfficer = RecoveryOfficer::create([
+                'recovery_officer_id' => $employeeId,
+            ]);
+
+            return Helpers::result('Recovery Officer added successfully', Response::HTTP_OK, $recoveryOfficer);
+        } catch (\Throwable $e) {
+            return Helpers::error(null, 'An exception occurred', $e, Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /************************************ Get All Recovery Officers ************************************/
+
+    public function getAllRecoveryOfficer()
+    {
+        try {
+            $user = auth()->user();
+            $branchId = $user->employee->branch_id;
+
+            $recoveryOfficers = RecoveryOfficer::whereHas('employee', function ($query) use ($branchId) {
+                $query->where('branch_id', $branchId);
+            })->with(['employee.user', 'employee.branch'])->get();
+            if ($recoveryOfficers->isEmpty()) {
+                return Helpers::result('No Recovery officers found', Response::HTTP_NOT_FOUND);
+            }
+
+            $data = $recoveryOfficers->map(function ($recoveryOfficer) {
+                return [
+                    'id' => $recoveryOfficer->id,
+                    'employee_id' => $recoveryOfficer->employee->id,
+                    'name' => $recoveryOfficer->employee->user->name,
+                    'branch_name' => $recoveryOfficer->employee->branch->name ?? 'N/A',
+                ];
+            });
+
+            return Helpers::result('Recovery Officers fetched successfully', Response::HTTP_OK, $data);
+        } catch (\Throwable $e) {
+            return Helpers::error(null, 'An exception occurred', $e, Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /************************************ Delete Recovery Officer ************************************/
+
+    public function deleteRecoveryOfficer($employeeId)
+    {
+        try {
+            $recoveryOfficer = RecoveryOfficer::where('recovery_officer_id', $employeeId)->first();
+
+            if (!$recoveryOfficer) {
+                return Helpers::result('Recovery Officer not found', Response::HTTP_NOT_FOUND);
+            }
+
+            $recoveryOfficer->delete();
+
+            return Helpers::result('Recovery Officer deleted successfully', Response::HTTP_OK);
         } catch (\Throwable $e) {
             return Helpers::error(null, 'An exception occurred', $e, Response::HTTP_INTERNAL_SERVER_ERROR);
         }

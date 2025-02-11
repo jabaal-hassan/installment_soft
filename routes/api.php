@@ -49,8 +49,13 @@ Route::group(['middleware' => ['api', 'log.request', 'log.activity']], function 
 
             // Inquiry Officer Management
             Route::post('add-inquiry-officer/{employee_id}', 'addInquiryOfficer');
-            Route::delete('delete-inquiry-officer/{inquiry_officer_id}', 'deleteInquiryOfficer');
+            Route::delete('delete-inquiry-officer/{employee_id}', 'deleteInquiryOfficer');
             Route::get('get-inquiry-officers', 'getInquiryOfficers');
+
+            // Recovery Officer Management
+            Route::post('add-recovery-officer/{employee_id}', 'addRecoveryOfficer');
+            Route::delete('delete-recovery-officer/{employee_id}', 'deleteRecoveryOfficer');
+            Route::get('get-recovery-officers', 'getRecoveryOfficers');
 
             // Branch Management
             Route::post('add-branch', 'storeBranch');

@@ -102,4 +102,16 @@ class AdminController extends Controller
     {
         return $this->adminService->deleteInquiryOfficer($request);
     }
+    public function addRecoveryofficer($request)
+    {
+        return $this->adminService->addRecoveryofficer($request);
+    }
+    public function getRecoveryOfficers()
+    {
+        return $this->adminService->getAllRecoveryOfficer();
+    }
+    public function deleteRecoveryOfficer($request)
+    {
+        return $this->adminService->deleteRecoveryOfficer($request);
+    }
 }

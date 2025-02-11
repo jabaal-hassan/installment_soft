@@ -10,8 +10,8 @@ class RecoveryOfficer extends Model
     use HasFactory;
     protected $guarded = [];
 
-    public function recoveryOfficer()
+    public function employee()
     {
-        return $this->belongsTo(Employee::class);
+        return $this->belongsTo(Employee::class, 'recovery_officer_id');
     }
 }
