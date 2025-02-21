@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Granter extends Model
 {
     use HasFactory;
+
     protected $guarded = [];
 
     public function customer()

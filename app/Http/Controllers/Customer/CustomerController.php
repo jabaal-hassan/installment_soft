@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Customer;
 use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
 use App\Services\Customer\CustomerService;
+use App\Http\Requests\Customer\GranterRequest;
 use App\Http\Requests\Customer\CustomerRequest;
 
 class CustomerController extends Controller
@@ -46,5 +47,17 @@ class CustomerController extends Controller
         $user = auth()->user();
         $branchId = $user->employee->branch_id;
         return $this->customerService->getBranchCustomers($branchId);
+    }
+    public function getCustomersWithoutGranters()
+    {
+        return $this->customerService->getCustomersWithoutGranters();
+    }
+    public function addGranter(GranterRequest $request)
+    {
+        return $this->customerService->addGranter($request);
+    }
+    public function updateGranter(GranterRequest $request, $id)
+    {
+        return $this->customerService->updateGranter($id, $request);
     }
 }

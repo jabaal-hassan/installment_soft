@@ -18,11 +18,11 @@ return new class extends Migration
             $table->foreignId('customer_id')->constrained()->cascadeOnDelete(); // Relationship with customers
             $table->string('name');
             $table->string('father_name');
-            $table->string('cnic')->unique();
-            $table->string('phone_number')->unique();
+            $table->string('cnic');
+            $table->string('phone_number');
             $table->string('relationship'); // E.g., Friend, Family, etc.
             $table->text('address')->nullable();
-            $table->string('office_address');
+            $table->string('office_address')->nullable();
             $table->string('employment_type')->default('company');
             $table->string('company_name')->nullable();
             $table->integer('years_of_experience')->default(0);
