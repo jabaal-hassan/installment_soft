@@ -6,7 +6,7 @@ use App\DTOs\BaseDTOs;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
-class GranterCreateDTO extends BaseDTOs
+class GuarantorCreateDTO extends BaseDTOs
 {
     public string $customer_id;
     public string $name;
@@ -39,7 +39,6 @@ class GranterCreateDTO extends BaseDTOs
         $this->cnic_Front_image = $this->handleFileUpload($request, 'cnic_Front_image', 'customers/cnic_images');
         $this->cnic_Back_image = $this->handleFileUpload($request, 'cnic_Back_image', 'customers/cnic_images');
         $this->video = $this->handleFileUpload($request, 'video', 'customers/videos');
-
     }
     private function handleFileUpload(Request $request, $field, $folder)
     {

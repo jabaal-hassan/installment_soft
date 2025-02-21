@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Services\Customer\CustomerService;
 use App\Http\Requests\Customer\GranterRequest;
 use App\Http\Requests\Customer\CustomerRequest;
+use App\Http\Requests\Customer\GuarantorRequest;
 
 class CustomerController extends Controller
 {
@@ -48,16 +49,16 @@ class CustomerController extends Controller
         $branchId = $user->employee->branch_id;
         return $this->customerService->getBranchCustomers($branchId);
     }
-    public function getCustomersWithoutGranters()
+    public function getCustomersWithoutGuarantors()
     {
-        return $this->customerService->getCustomersWithoutGranters();
+        return $this->customerService->getCustomersWithoutGuarantors();
     }
-    public function addGranter(GranterRequest $request)
+    public function addGuarantor(GuarantorRequest $request)
     {
-        return $this->customerService->addGranter($request);
+        return $this->customerService->addGuarantor($request);
     }
-    public function updateGranter(GranterRequest $request, $id)
+    public function updateGuarantor(GuarantorRequest $request, $id)
     {
-        return $this->customerService->updateGranter($id, $request);
+        return $this->customerService->updateGuarantor($id, $request);
     }
 }

@@ -4,7 +4,7 @@ namespace App\Http\Requests\Customer;
 
 use App\Http\Requests\BaseRequest;
 
-class GranterRequest extends BaseRequest
+class GuarantorRequest extends BaseRequest
 {
     /**
      * Determine if the user is authorized to make this request.

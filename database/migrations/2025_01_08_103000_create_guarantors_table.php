@@ -13,7 +13,7 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('granters', function (Blueprint $table) {
+        Schema::create('guarantors', function (Blueprint $table) {
             $table->id();
             $table->foreignId('customer_id')->constrained()->cascadeOnDelete(); // Relationship with customers
             $table->string('name');
@@ -41,6 +41,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('granters');
+        Schema::dropIfExists('guarantors');
     }
 };

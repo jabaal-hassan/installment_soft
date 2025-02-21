@@ -4,7 +4,7 @@ namespace App\Services\Customer;
 
 use App\Models\Sale;
 use App\Models\Branch;
-use App\Models\Granter;
+use App\Models\Guarantor;
 use App\Helpers\Helpers;
 use App\Models\Customer;
 use App\Models\Inventory;
@@ -19,7 +19,7 @@ use App\DTOs\CustomerDTOs\CustomerCreateDTO;
 use App\DTOs\CustomerDTOs\CustomerAccountDTO;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-use App\DTOs\CustomerDTOs\GranterCreateDTO;
+use App\DTOs\CustomerDTOs\GuarantorCreateDTO;
 
 class CustomerService
 {
@@ -57,15 +57,15 @@ class CustomerService
 
             $customerAccount = CustomerAccount::where('customer_id', $id)->first();
 
-            $granters = Granter::where('customer_id', $id)->first();
-            $granters->cnic_Front_image = $this->getFullUrl($granters->cnic_Front_image);
-            $granters->cnic_Back_image = $this->getFullUrl($granters->cnic_Back_image);
+            $guarantors = Guarantor::where('customer_id', $id)->first();
+            $guarantors->cnic_Front_image = $this->getFullUrl($guarantors->cnic_Front_image);
+            $guarantors->cnic_Back_image = $this->getFullUrl($guarantors->cnic_Back_image);
 
             return Helpers::result('Customer retrieved successfully', Response::HTTP_OK, [
                 'customer' => $customer,
                 'sale' => $sale,
                 'customerAccount' => $customerAccount,
-                'granters' => $granters
+                'guarantors' => $guarantors
             ]);
         } catch (\Throwable $e) {
             return Helpers::error(null, Messages::ExceptionMessage, $e, Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -195,12 +195,12 @@ class CustomerService
         }
     }
 
-    /************************************ Get Customers Without Granters ************************************/
+    /************************************ Get Customers Without Guarantors ************************************/
 
-    public function getCustomersWithoutGranters()
+    public function getCustomersWithoutGuarantors()
     {
         try {
-            $customers = Customer::doesntHave('granters')->get()->map(function ($customer) {
+            $customers = Customer::doesntHave('guarantors')->get()->map(function ($customer) {
                 $customer->cnic_front_image = $this->getFullUrl($customer->cnic_front_image);
                 $customer->cnic_back_image = $this->getFullUrl($customer->cnic_back_image);
                 $customer->customer_image = $this->getFullUrl($customer->customer_image);
@@ -209,15 +209,15 @@ class CustomerService
                 return $customer;
             });
 
-            return Helpers::result('Customers without granters retrieved successfully', Response::HTTP_OK, ['customers' => $customers]);
+            return Helpers::result('Customers without guarantors retrieved successfully', Response::HTTP_OK, ['customers' => $customers]);
         } catch (\Throwable $e) {
             return Helpers::error(null, Messages::ExceptionMessage, $e, Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
-    /************************************ Add Granter ************************************/
+    /************************************ Add Guarantor ************************************/
 
-    public function addGranter($request)
+    public function addGuarantor($request)
     {
         try {
             DB::beginTransaction();
@@ -226,39 +226,39 @@ class CustomerService
             if (!$customer) {
                 return Helpers::result('Customer not found', Response::HTTP_NOT_FOUND);
             }
-            $granterCount = Granter::where('cnic', $request->cnic)->count();
-            if ($granterCount >= 2) {
-                return Helpers::result('Granter can only two guarantee', Response::HTTP_BAD_REQUEST);
+            $guarantorCount = Guarantor::where('cnic', $request->cnic)->count();
+            if ($guarantorCount >= 2) {
+                return Helpers::result('Guarantor can only provide two guarantees', Response::HTTP_BAD_REQUEST);
             } else {
-                $granterDTO = new GranterCreateDTO($request);
-                $granter = Granter::create($granterDTO->toArray());
+                $guarantorDTO = new GuarantorCreateDTO($request);
+                $guarantor = Guarantor::create($guarantorDTO->toArray());
             }
 
             DB::commit();
-            return Helpers::result('Granter added successfully', Response::HTTP_CREATED, $granter);
+            return Helpers::result('Guarantor added successfully', Response::HTTP_CREATED, $guarantor);
         } catch (\Throwable $e) {
             DB::rollBack();
             return Helpers::error($request, Messages::ExceptionMessage, $e, Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
-    /************************************ Update Granter ************************************/
+    /************************************ Update Guarantor ************************************/
 
-    public function updateGranter($id, $request)
+    public function updateGuarantor($id, $request)
     {
         try {
             DB::beginTransaction();
 
-            $granter = Granter::find($id);
-            if (!$granter) {
-                return Helpers::result('Granter not found', Response::HTTP_NOT_FOUND);
+            $guarantor = Guarantor::find($id);
+            if (!$guarantor) {
+                return Helpers::result('Guarantor not found', Response::HTTP_NOT_FOUND);
             }
 
-            $granterDTO = new GranterCreateDTO($request);
-            $granter->update($granterDTO->toArray());
+            $guarantorDTO = new GuarantorCreateDTO($request);
+            $guarantor->update($guarantorDTO->toArray());
 
             DB::commit();
-            return Helpers::result('Granter updated successfully', Response::HTTP_OK, $granter);
+            return Helpers::result('Guarantor updated successfully', Response::HTTP_OK, $guarantor);
         } catch (\Throwable $e) {
             DB::rollBack();
             return Helpers::error($request, Messages::ExceptionMessage, $e, Response::HTTP_INTERNAL_SERVER_ERROR);

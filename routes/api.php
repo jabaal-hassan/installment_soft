@@ -94,7 +94,7 @@ Route::group(['middleware' => ['api', 'log.request', 'log.activity']], function 
             Route::controller(CustomerController::class)->group(function () {
                 Route::get('get-all-customers', 'index');
                 Route::put('update-customer/{id}', 'update');
-                Route::put('update-granter/{id}', 'updateGranter');
+                Route::put('update-guarantor/{id}', 'updateGuarantor');
             });
         });
 
@@ -102,11 +102,11 @@ Route::group(['middleware' => ['api', 'log.request', 'log.activity']], function 
             // Customer Management
             Route::controller(CustomerController::class)->group(function () {
                 Route::post('add-customer', 'store');
-                Route::get('get-customers-without-granters', 'getCustomersWithoutGranters');
+                Route::get('get-customers-without-guarantors', 'getCustomersWithoutGuarantors');
                 Route::get('get-branch-customers', 'getBranchCustomers');
                 Route::delete('delete-customer/{id}', 'destroy');
                 Route::get('get-customer/{id}', 'show');
-                Route::post('add-granter', 'addGranter');
+                Route::post('add-guarantor', 'addGuarantor');
             });
             Route::controller(InstallmentPlanController::class)->group(function () {
                 Route::get('get-all-installment-plans', 'index');

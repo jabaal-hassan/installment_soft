@@ -9,7 +9,6 @@ class Company extends Model
 {
     use HasFactory;
     protected $guarded = [];
-    // Define the relationship between Company and Employee
     public function employees()
     {
         return $this->hasMany(Employee::class);
