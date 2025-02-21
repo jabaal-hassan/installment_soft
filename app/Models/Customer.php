@@ -10,9 +10,9 @@ class Customer extends Model
     use HasFactory;
     protected $guarded = [];
 
-    public function granters()
+    public function guarantors()
     {
-        return $this->hasMany(Granter::class);
+        return $this->hasMany(Guarantor::class);
     }
 
     public function employee()

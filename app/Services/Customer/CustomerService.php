@@ -4,18 +4,22 @@ namespace App\Services\Customer;
 
 use App\Models\Sale;
 use App\Models\Branch;
+use App\Models\Guarantor;
 use App\Helpers\Helpers;
 use App\Models\Customer;
 use App\Models\Inventory;
 use App\Constants\Messages;
 use Illuminate\Http\Response;
+use App\Models\CustomerAccount;
+use App\Models\InstallmentPlan;
 use App\DTOs\CustomerDTOs\SaleDTO;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\DTOs\CustomerDTOs\CustomerCreateDTO;
-use App\Models\CustomerAccount;
 use App\DTOs\CustomerDTOs\CustomerAccountDTO;
-use App\Models\InstallmentPlan;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use App\DTOs\CustomerDTOs\GuarantorCreateDTO;
 
 class CustomerService
 {
@@ -23,8 +27,8 @@ class CustomerService
     {
         try {
             $customers = Customer::all()->map(function ($customer) {
-                $customer->cnic_front_image = $this->getFullUrl($customer->cnic_front_image);
-                $customer->cnic_back_image = $this->getFullUrl($customer->cnic_back_image);
+                $customer->cnic_Front_image = $this->getFullUrl($customer->cnic_Front_image);
+                $customer->cnic_Back_image = $this->getFullUrl($customer->cnic_Back_image);
                 $customer->customer_image = $this->getFullUrl($customer->customer_image);
                 $customer->check_image = $this->getFullUrl($customer->check_image);
                 $customer->video = $this->getFullUrl($customer->video);
@@ -41,12 +45,28 @@ class CustomerService
     {
         try {
             $customer = Customer::findOrFail($id);
-            $customer->cnic_front_image = $this->getFullUrl($customer->cnic_front_image);
-            $customer->cnic_back_image = $this->getFullUrl($customer->cnic_back_image);
+
+            $customer->cnic_Front_image = $this->getFullUrl($customer->cnic_Front_image);
+            $customer->cnic_Back_image = $this->getFullUrl($customer->cnic_Back_image);
             $customer->customer_image = $this->getFullUrl($customer->customer_image);
             $customer->check_image = $this->getFullUrl($customer->check_image);
             $customer->video = $this->getFullUrl($customer->video);
-            return Helpers::result('Customer retrieved successfully', Response::HTTP_OK, ['customer' => $customer]);
+
+
+            $sale = Sale::where('customer_id', $id)->first();
+
+            $customerAccount = CustomerAccount::where('customer_id', $id)->first();
+
+            $guarantors = Guarantor::where('customer_id', $id)->first();
+            $guarantors->cnic_Front_image = $this->getFullUrl($guarantors->cnic_Front_image);
+            $guarantors->cnic_Back_image = $this->getFullUrl($guarantors->cnic_Back_image);
+
+            return Helpers::result('Customer retrieved successfully', Response::HTTP_OK, [
+                'customer' => $customer,
+                'sale' => $sale,
+                'customerAccount' => $customerAccount,
+                'guarantors' => $guarantors
+            ]);
         } catch (\Throwable $e) {
             return Helpers::error(null, Messages::ExceptionMessage, $e, Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -172,6 +192,76 @@ class CustomerService
             return Helpers::result('Branch customers retrieved successfully', Response::HTTP_OK, ['customers' => $customers]);
         } catch (\Throwable $e) {
             return Helpers::error(null, Messages::ExceptionMessage, $e, Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /************************************ Get Customers Without Guarantors ************************************/
+
+    public function getCustomersWithoutGuarantors()
+    {
+        try {
+            $customers = Customer::doesntHave('guarantors')->get()->map(function ($customer) {
+                $customer->cnic_front_image = $this->getFullUrl($customer->cnic_front_image);
+                $customer->cnic_back_image = $this->getFullUrl($customer->cnic_back_image);
+                $customer->customer_image = $this->getFullUrl($customer->customer_image);
+                $customer->check_image = $this->getFullUrl($customer->check_image);
+                $customer->video = $this->getFullUrl($customer->video);
+                return $customer;
+            });
+
+            return Helpers::result('Customers without guarantors retrieved successfully', Response::HTTP_OK, ['customers' => $customers]);
+        } catch (\Throwable $e) {
+            return Helpers::error(null, Messages::ExceptionMessage, $e, Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /************************************ Add Guarantor ************************************/
+
+    public function addGuarantor($request)
+    {
+        try {
+            DB::beginTransaction();
+
+            $customer = Customer::find($request->customer_id);
+            if (!$customer) {
+                return Helpers::result('Customer not found', Response::HTTP_NOT_FOUND);
+            }
+            $guarantorCount = Guarantor::where('cnic', $request->cnic)->count();
+            if ($guarantorCount >= 2) {
+                return Helpers::result('Guarantor can only provide two guarantees', Response::HTTP_BAD_REQUEST);
+            } else {
+                $guarantorDTO = new GuarantorCreateDTO($request);
+                $guarantor = Guarantor::create($guarantorDTO->toArray());
+            }
+
+            DB::commit();
+            return Helpers::result('Guarantor added successfully', Response::HTTP_CREATED, $guarantor);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return Helpers::error($request, Messages::ExceptionMessage, $e, Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /************************************ Update Guarantor ************************************/
+
+    public function updateGuarantor($id, $request)
+    {
+        try {
+            DB::beginTransaction();
+
+            $guarantor = Guarantor::find($id);
+            if (!$guarantor) {
+                return Helpers::result('Guarantor not found', Response::HTTP_NOT_FOUND);
+            }
+
+            $guarantorDTO = new GuarantorCreateDTO($request);
+            $guarantor->update($guarantorDTO->toArray());
+
+            DB::commit();
+            return Helpers::result('Guarantor updated successfully', Response::HTTP_OK, $guarantor);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return Helpers::error($request, Messages::ExceptionMessage, $e, Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
