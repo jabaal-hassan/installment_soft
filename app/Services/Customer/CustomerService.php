@@ -14,11 +14,8 @@ use App\Models\CustomerAccount;
 use App\Models\InstallmentPlan;
 use App\DTOs\CustomerDTOs\SaleDTO;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use App\DTOs\CustomerDTOs\CustomerCreateDTO;
 use App\DTOs\CustomerDTOs\CustomerAccountDTO;
-use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use App\DTOs\CustomerDTOs\GuarantorCreateDTO;
 
 class CustomerService
@@ -200,9 +197,18 @@ class CustomerService
     public function getCustomersWithoutGuarantors()
     {
         try {
-            $customers = Customer::doesntHave('guarantors')->get()->map(function ($customer) {
-                $customer->cnic_front_image = $this->getFullUrl($customer->cnic_front_image);
-                $customer->cnic_back_image = $this->getFullUrl($customer->cnic_back_image);
+            $user = auth()->user();
+            $role = $user->roles->first()->name ?? 'N/A';
+            $employee = $user->employee;
+
+            $customersQuery = Customer::doesntHave('guarantors');
+            if ($role == 'employee') {
+                $customersQuery->where('sell_officer_id', $employee->id);
+            }
+
+            $customers = $customersQuery->get()->map(function ($customer) {
+                $customer->cnic_Front_image = $this->getFullUrl($customer->cnic_Front_image);
+                $customer->cnic_Back_image = $this->getFullUrl($customer->cnic_Back_image);
                 $customer->customer_image = $this->getFullUrl($customer->customer_image);
                 $customer->check_image = $this->getFullUrl($customer->check_image);
                 $customer->video = $this->getFullUrl($customer->video);

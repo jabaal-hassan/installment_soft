@@ -112,6 +112,9 @@ Route::group(['middleware' => ['api', 'log.request', 'log.activity']], function 
                 Route::get('get-all-installment-plans', 'index');
                 Route::get('get-installment-plan/{id}', 'show');
             });
+            Route::controller(AdminController::class)->group(function () {
+                Route::get('get-company', 'getcompany');
+            });
         });
         // Public Routes
         Route::post('password-setup', 'passwordSetup');
