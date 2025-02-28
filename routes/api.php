@@ -93,7 +93,7 @@ Route::group(['middleware' => ['api', 'log.request', 'log.activity']], function 
             // Customer Management
             Route::controller(CustomerController::class)->group(function () {
                 Route::get('get-all-customers', 'index');
-                Route::put('update-customer/{id}', 'update');
+                Route::post('update-customer/{id}', 'update');
                 Route::put('update-guarantor/{id}', 'updateGuarantor');
             });
         });
@@ -107,6 +107,7 @@ Route::group(['middleware' => ['api', 'log.request', 'log.activity']], function 
                 Route::delete('delete-customer/{id}', 'destroy');
                 Route::get('get-customer/{id}', 'show');
                 Route::post('add-guarantor', 'addGuarantor');
+                Route::get('get-inquiry-customers', 'getInquiryCustomers');
             });
             Route::controller(InstallmentPlanController::class)->group(function () {
                 Route::get('get-all-installment-plans', 'index');

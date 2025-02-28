@@ -20,6 +20,7 @@ use App\DTOs\CustomerDTOs\GuarantorCreateDTO;
 
 class CustomerService
 {
+    /************************************ get All Customer ************************************/
     public function getAllCustomers()
     {
         try {
@@ -37,7 +38,7 @@ class CustomerService
             return Helpers::error(null, Messages::ExceptionMessage, $e, Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
+    /************************************ get Customer ************************************/
     public function getCustomerById($id)
     {
         try {
@@ -68,7 +69,54 @@ class CustomerService
             return Helpers::error(null, Messages::ExceptionMessage, $e, Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+    /************************************ get Branch Customer ************************************/
+    public function getBranchCustomers($branchId)
+    {
+        try {
+            $customers = Customer::where('branch_id', $branchId)->get()->map(function ($customer) {
+                $customer->cnic_Front_image = $this->getFullUrl($customer->cnic_Front_image);
+                $customer->cnic_Back_image = $this->getFullUrl($customer->cnic_Back_image);
+                $customer->customer_image = $this->getFullUrl($customer->customer_image);
+                $customer->check_image = $this->getFullUrl($customer->check_image);
+                $customer->video = $this->getFullUrl($customer->video);
+                return $customer;
+            });
 
+            return Helpers::result('Branch customers retrieved successfully', Response::HTTP_OK, ['customers' => $customers]);
+        } catch (\Throwable $e) {
+            return Helpers::error(null, Messages::ExceptionMessage, $e, Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    /************************************ Get Inquiry Customer ************************************/
+    public function getInquiryCustomers()
+    {
+        try {
+            $user = auth()->user();
+            $role = $user->roles->first()->name ?? 'N/A';
+            $employeeId = $user->employee->id ?? null;
+
+            // Fetch customers based on role
+            $query = Customer::where('status', 'processing');
+
+            if ($role === 'employee' && $employeeId) {
+                $query->where('inquiry_officer_id', $employeeId);
+            }
+
+            $customers = $query->get()->map(function ($customer) {
+                $customer->cnic_Front_image = $this->getFullUrl($customer->cnic_Front_image);
+                $customer->cnic_Back_image = $this->getFullUrl($customer->cnic_Back_image);
+                $customer->customer_image = $this->getFullUrl($customer->customer_image);
+                $customer->check_image = $this->getFullUrl($customer->check_image);
+                $customer->video = $this->getFullUrl($customer->video);
+                return $customer;
+            });
+
+            return Helpers::result('Inquiry Customers retrieved successfully', Response::HTTP_OK, ['customers' => $customers]);
+        } catch (\Throwable $e) {
+            return Helpers::error(null, Messages::ExceptionMessage, $e, Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    /************************************ Create Customer ************************************/
     public function createCustomer($request)
     {
         try {
@@ -130,7 +178,7 @@ class CustomerService
             return Helpers::error($request, Messages::ExceptionMessage, $e, Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
+    /************************************ Update Customer ************************************/
     public function updateCustomer($id, $request)
     {
         try {
@@ -138,6 +186,7 @@ class CustomerService
             $user = auth()->user();
             $employee = $user->employee;
             $role = $user->roles->first()->name ?? 'N/A';
+            $customer = Customer::findOrFail($id);
 
             // Check if the provided branch_id belongs to the user's company, except for admin
             $branchId = $request->branch_id ?? $employee->branch_id;
@@ -151,9 +200,16 @@ class CustomerService
                     return Helpers::result('Invalid branch ID for the user\'s company', Response::HTTP_BAD_REQUEST);
                 }
             }
-            $customer = Customer::findOrFail($id);
-            $customerDTO = new CustomerCreateDTO($request, $employee);
-            $customer->update($customerDTO->toArray());
+            $customerData = array_merge(
+                $customer->toArray(),
+                array_filter($request->all(), fn($value, $key) => !is_null($value) && $key !== 'request_log_id', ARRAY_FILTER_USE_BOTH)
+            );
+            $customer->update($customerData);
+
+            if ($request->status === 'confirmed') {
+                Sale::where('customer_id', $id)->update(['status' => 'confirmed']);
+                CustomerAccount::where('customer_id', $id)->update(['status' => 'confirmed']);
+            }
 
             DB::commit();
             return Helpers::result('Customer updated successfully', Response::HTTP_OK, ['customer' => $customer]);
@@ -162,7 +218,7 @@ class CustomerService
             return Helpers::error($request, Messages::ExceptionMessage, $e, Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
+    /************************************ delete Customer ************************************/
     public function deleteCustomer($id)
     {
         try {
@@ -174,23 +230,6 @@ class CustomerService
         }
     }
 
-    public function getBranchCustomers($branchId)
-    {
-        try {
-            $customers = Customer::where('branch_id', $branchId)->get()->map(function ($customer) {
-                $customer->cnic_front_image = $this->getFullUrl($customer->cnic_front_image);
-                $customer->cnic_back_image = $this->getFullUrl($customer->cnic_back_image);
-                $customer->customer_image = $this->getFullUrl($customer->customer_image);
-                $customer->check_image = $this->getFullUrl($customer->check_image);
-                $customer->video = $this->getFullUrl($customer->video);
-                return $customer;
-            });
-
-            return Helpers::result('Branch customers retrieved successfully', Response::HTTP_OK, ['customers' => $customers]);
-        } catch (\Throwable $e) {
-            return Helpers::error(null, Messages::ExceptionMessage, $e, Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
 
     /************************************ Get Customers Without Guarantors ************************************/
 
