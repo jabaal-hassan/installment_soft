@@ -164,7 +164,7 @@ class CustomerService
                 $query->where('inquiry_officer_id', $employeeId);
             }
 
-            $customers = $query->get()->map(function ($customer) {
+            $customers = $query->get()->map(function ($customer) use ($role) {
                 $customer->cnic_Front_image = $this->getFullUrl($customer->cnic_Front_image);
                 $customer->cnic_Back_image = $this->getFullUrl($customer->cnic_Back_image);
                 $customer->customer_image = $this->getFullUrl($customer->customer_image);
@@ -179,6 +179,18 @@ class CustomerService
                     ] : null;
                 } else {
                     $customer->sell_officer = null;
+                }
+                // Add Inquiry Officer Details if the user is a Branch Admin
+                if ($customer->inquiry_officer_id && $role === 'branch admin') {
+                    $inquiryOfficer = Employee::find($customer->inquiry_officer_id);
+                    $customer->inquiry_officer = $inquiryOfficer ? [
+                        'id' => $inquiryOfficer->id,
+                        'name' => $inquiryOfficer->name,
+                        'father_name' => $inquiryOfficer->father_name,
+                        'phone_number' => $inquiryOfficer->phone_number,
+                    ] : null;
+                } else {
+                    $customer->inquiry_officer = null;
                 }
 
                 return $customer;
@@ -261,9 +273,11 @@ class CustomerService
             $role = $user->roles->first()->name ?? 'N/A';
             $customer = Customer::findOrFail($id);
 
-            $guarantorExists = Guarantor::where('customer_id', $id)->exists();
-            if (!$guarantorExists) {
-                return Helpers::result('Guarantor is required before confirm the customer', Response::HTTP_BAD_REQUEST);
+            if ($request->status === 'confirmed') {
+                $guarantorExists = Guarantor::where('customer_id', $id)->exists();
+                if (!$guarantorExists) {
+                    return Helpers::result('Guarantor is required before confirming the customer', Response::HTTP_BAD_REQUEST);
+                }
             }
 
             // Check if the provided branch_id belongs to the user's company, except for admin
