@@ -33,6 +33,12 @@ class CustomerController extends Controller
     {
         return $this->customerService->getCustomerById($id);
     }
+    public function getRejectedCustomers()
+    {
+        $user = auth()->user();
+        $branchId = $user->employee->branch_id;
+        return $this->customerService->getRejectedCustomers($branchId);
+    }
 
     public function getInquiryCustomers()
     {
