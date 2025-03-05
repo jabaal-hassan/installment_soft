@@ -71,6 +71,45 @@ class CustomerService
         }
     }
     /************************************ get Branch Customer ************************************/
+    public function getConfirmedCustomers($branchId)
+    {
+        try {
+            $customers = Customer::where('branch_id', $branchId)->where('status', 'confirmed')
+                ->get()->map(function ($customer) {
+                    $customer->cnic_Front_image = $this->getFullUrl($customer->cnic_Front_image);
+                    $customer->cnic_Back_image = $this->getFullUrl($customer->cnic_Back_image);
+                    $customer->customer_image = $this->getFullUrl($customer->customer_image);
+                    $customer->check_image = $this->getFullUrl($customer->check_image);
+                    $customer->video = $this->getFullUrl($customer->video);
+                    if ($customer->sell_officer_id) {
+                        $sellOfficer = Employee::find($customer->sell_officer_id);
+                        $customer->sell_officer = $sellOfficer ? [
+                            'name' => $sellOfficer->name,
+                            'father_name' => $sellOfficer->father_name,
+                            'phone_number' => $sellOfficer->phone_number,
+                        ] : null;
+                    } else {
+                        $customer->sell_officer = null;
+                    }
+                    if ($customer->inquiry_officer_id) {
+                        $inquiryofficer = Employee::find($customer->inquiry_officer_id);
+                        $customer->inquiry_officer = $inquiryofficer ? [
+                            'name' => $inquiryofficer->name,
+                            'father_name' => $inquiryofficer->father_name,
+                            'phone_number' => $inquiryofficer->phone_number,
+                        ] : null;
+                    } else {
+                        $customer->sell_officer = null;
+                    }
+                    return $customer;
+                });
+
+            return Helpers::result('Branch customers retrieved successfully', Response::HTTP_OK, ['customers' => $customers]);
+        } catch (\Throwable $e) {
+            return Helpers::error(null, Messages::ExceptionMessage, $e, Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    /************************************ get Branch Customer ************************************/
     public function getBranchCustomers($branchId)
     {
         try {

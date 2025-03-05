@@ -61,6 +61,13 @@ class CustomerController extends Controller
         $branchId = $user->employee->branch_id;
         return $this->customerService->getBranchCustomers($branchId);
     }
+    public function getConfirmedCustomers()
+    {
+
+        $user = auth()->user();
+        $branchId = $user->employee->branch_id;
+        return $this->customerService->getConfirmedCustomers($branchId);
+    }
     public function getCustomersWithoutGuarantors()
     {
         return $this->customerService->getCustomersWithoutGuarantors();

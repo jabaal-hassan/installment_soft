@@ -105,6 +105,7 @@ Route::group(['middleware' => ['api', 'log.request', 'log.activity']], function 
                 Route::post('add-customer', 'store');
                 Route::get('get-customers-without-guarantors', 'getCustomersWithoutGuarantors');
                 Route::get('get-branch-customers', 'getBranchCustomers');
+                Route::get('get-confirmed-customers', 'getConfirmedCustomers');
                 Route::post('update-customer/{id}', 'update');
                 Route::get('get-customer/{id}', 'show');
                 Route::post('add-guarantor', 'addGuarantor');
