@@ -52,13 +52,28 @@ class CustomerService
             $customer->video = $this->getFullUrl($customer->video);
 
 
-            $sale = Sale::where('customer_id', $id)->first();
+            // Sale ka data fetch karna aur brand/category ka name include karna
+            $sale = Sale::where('customer_id', $id)
+                ->with(['brand:id,name', 'category:id,name']) // Relationships load karna
+                ->first();
+
+            if ($sale) {
+                $sale->brand_name = $sale->brand->name ?? null;
+                $sale->category_name = $sale->category->name ?? null;
+                unset($sale->brand, $sale->category, $sale->brand_id, $sale->category_id); // ID fields hata dena
+            }
+
 
             $customerAccount = CustomerAccount::where('customer_id', $id)->first();
 
             $guarantors = Guarantor::where('customer_id', $id)->first();
+            if (!$guarantors) {
+                return Helpers::result('Guarantor not found', Response::HTTP_NOT_FOUND);
+            }
             $guarantors->cnic_Front_image = $this->getFullUrl($guarantors->cnic_Front_image);
             $guarantors->cnic_Back_image = $this->getFullUrl($guarantors->cnic_Back_image);
+
+
 
             return Helpers::result('Customer retrieved successfully', Response::HTTP_OK, [
                 'customer' => $customer,
