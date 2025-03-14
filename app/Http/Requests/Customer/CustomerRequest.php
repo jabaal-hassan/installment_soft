@@ -28,7 +28,7 @@ class CustomerRequest extends BaseRequest
             'name' => 'required|string|max:255',
             'father_name' => 'required|string|max:255',
             'phone_number' => 'required|string|unique:customers,phone_number',
-            'cnic' => 'required|string|unique:customers,cnic',
+            'cnic' => 'required|string|unique:customers,cnic|max:15',
             'address' => 'required|string',
             'office_address' => 'required|string',
             'employment_type' => 'nullable|string',

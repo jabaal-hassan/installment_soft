@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers\Customer;
 
+
+use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
 use App\Services\Customer\CustomerService;
-use App\Http\Requests\Customer\GranterRequest;
 use App\Http\Requests\Customer\CustomerRequest;
 use App\Http\Requests\Customer\GuarantorRequest;
 
@@ -32,8 +33,19 @@ class CustomerController extends Controller
     {
         return $this->customerService->getCustomerById($id);
     }
+    public function getRejectedCustomers()
+    {
+        $user = auth()->user();
+        $branchId = $user->employee->branch_id;
+        return $this->customerService->getRejectedCustomers($branchId);
+    }
 
-    public function update(CustomerRequest $request, $id): JsonResponse
+    public function getInquiryCustomers()
+    {
+        return $this->customerService->getInquiryCustomers();
+    }
+
+    public function update(Request $request, $id)
     {
         return $this->customerService->updateCustomer($id, $request);
     }
@@ -48,6 +60,13 @@ class CustomerController extends Controller
         $user = auth()->user();
         $branchId = $user->employee->branch_id;
         return $this->customerService->getBranchCustomers($branchId);
+    }
+    public function getConfirmedCustomers()
+    {
+
+        $user = auth()->user();
+        $branchId = $user->employee->branch_id;
+        return $this->customerService->getConfirmedCustomers($branchId);
     }
     public function getCustomersWithoutGuarantors()
     {

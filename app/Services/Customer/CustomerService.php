@@ -4,25 +4,28 @@ namespace App\Services\Customer;
 
 use App\Models\Sale;
 use App\Models\Branch;
-use App\Models\Guarantor;
 use App\Helpers\Helpers;
 use App\Models\Customer;
+use App\Models\Employee;
+use App\Models\Guarantor;
 use App\Models\Inventory;
 use App\Constants\Messages;
 use Illuminate\Http\Response;
 use App\Models\CustomerAccount;
+use App\Models\EmployeeReceipt;
 use App\Models\InstallmentPlan;
+use App\Models\InstallmentTable;
 use App\DTOs\CustomerDTOs\SaleDTO;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use App\DTOs\CustomerDTOs\CustomerCreateDTO;
 use App\DTOs\CustomerDTOs\CustomerAccountDTO;
-use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use App\DTOs\CustomerDTOs\GuarantorCreateDTO;
+use App\DTOs\EmployeeDTOs\EmployeeReceiptDTO;
+use App\DTOs\CustomerDTOs\InstallmentTableDTO;
 
 class CustomerService
 {
+    /************************************ get All Customer ************************************/
     public function getAllCustomers()
     {
         try {
@@ -40,7 +43,7 @@ class CustomerService
             return Helpers::error(null, Messages::ExceptionMessage, $e, Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
+    /************************************ get Customer ************************************/
     public function getCustomerById($id)
     {
         try {
@@ -53,25 +56,211 @@ class CustomerService
             $customer->video = $this->getFullUrl($customer->video);
 
 
-            $sale = Sale::where('customer_id', $id)->first();
+            // Sale ka data fetch karna aur brand/category ka name include karna
+            $sale = Sale::where('customer_id', $id)
+                ->with(['brand:id,name', 'category:id,name']) // Relationships load karna
+                ->first();
+
+            if ($sale) {
+                $sale->brand_name = $sale->brand->name ?? null;
+                $sale->category_name = $sale->category->name ?? null;
+                unset($sale->brand, $sale->category, $sale->brand_id, $sale->category_id); // ID fields hata dena
+            }
+
 
             $customerAccount = CustomerAccount::where('customer_id', $id)->first();
-
+            $installment_table = InstallmentTable::where('customer_id', $id)->get();
             $guarantors = Guarantor::where('customer_id', $id)->first();
+            if (!$guarantors) {
+                return Helpers::result('Guarantor not found', Response::HTTP_NOT_FOUND);
+            }
             $guarantors->cnic_Front_image = $this->getFullUrl($guarantors->cnic_Front_image);
             $guarantors->cnic_Back_image = $this->getFullUrl($guarantors->cnic_Back_image);
+
+
 
             return Helpers::result('Customer retrieved successfully', Response::HTTP_OK, [
                 'customer' => $customer,
                 'sale' => $sale,
                 'customerAccount' => $customerAccount,
+                'installmentTable' => $installment_table,
                 'guarantors' => $guarantors
             ]);
         } catch (\Throwable $e) {
             return Helpers::error(null, Messages::ExceptionMessage, $e, Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+    /************************************ get Branch Customer ************************************/
+    public function getConfirmedCustomers($branchId)
+    {
+        try {
+            $customers = Customer::where('branch_id', $branchId)->where('status', 'confirmed')
+                ->get()->map(function ($customer) {
+                    $customer->cnic_Front_image = $this->getFullUrl($customer->cnic_Front_image);
+                    $customer->cnic_Back_image = $this->getFullUrl($customer->cnic_Back_image);
+                    $customer->customer_image = $this->getFullUrl($customer->customer_image);
+                    $customer->check_image = $this->getFullUrl($customer->check_image);
+                    $customer->video = $this->getFullUrl($customer->video);
+                    if ($customer->sell_officer_id) {
+                        $sellOfficer = Employee::find($customer->sell_officer_id);
+                        $customer->sell_officer = $sellOfficer ? [
+                            'name' => $sellOfficer->name,
+                            'father_name' => $sellOfficer->father_name,
+                            'phone_number' => $sellOfficer->phone_number,
+                        ] : null;
+                    } else {
+                        $customer->sell_officer = null;
+                    }
+                    if ($customer->inquiry_officer_id) {
+                        $inquiryofficer = Employee::find($customer->inquiry_officer_id);
+                        $customer->inquiry_officer = $inquiryofficer ? [
+                            'name' => $inquiryofficer->name,
+                            'father_name' => $inquiryofficer->father_name,
+                            'phone_number' => $inquiryofficer->phone_number,
+                        ] : null;
+                    } else {
+                        $customer->sell_officer = null;
+                    }
+                    return $customer;
+                });
 
+            return Helpers::result('Branch customers retrieved successfully', Response::HTTP_OK, ['customers' => $customers]);
+        } catch (\Throwable $e) {
+            return Helpers::error(null, Messages::ExceptionMessage, $e, Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    /************************************ get Branch Customer ************************************/
+    public function getBranchCustomers($branchId)
+    {
+        try {
+            $customers = Customer::where('branch_id', $branchId)->where('status', 'delivered')
+                ->get()->map(function ($customer) {
+                    $customer->cnic_Front_image = $this->getFullUrl($customer->cnic_Front_image);
+                    $customer->cnic_Back_image = $this->getFullUrl($customer->cnic_Back_image);
+                    $customer->customer_image = $this->getFullUrl($customer->customer_image);
+                    $customer->check_image = $this->getFullUrl($customer->check_image);
+                    $customer->video = $this->getFullUrl($customer->video);
+                    if ($customer->sell_officer_id) {
+                        $sellOfficer = Employee::find($customer->sell_officer_id);
+                        $customer->sell_officer = $sellOfficer ? [
+                            'name' => $sellOfficer->name,
+                            'father_name' => $sellOfficer->father_name,
+                            'phone_number' => $sellOfficer->phone_number,
+                        ] : null;
+                    } else {
+                        $customer->sell_officer = null;
+                    }
+                    if ($customer->inquiry_officer_id) {
+                        $inquiryofficer = Employee::find($customer->inquiry_officer_id);
+                        $customer->inquiry_officer = $inquiryofficer ? [
+                            'name' => $inquiryofficer->name,
+                            'father_name' => $inquiryofficer->father_name,
+                            'phone_number' => $inquiryofficer->phone_number,
+                        ] : null;
+                    } else {
+                        $customer->sell_officer = null;
+                    }
+                    return $customer;
+                });
+
+            return Helpers::result('Branch customers retrieved successfully', Response::HTTP_OK, ['customers' => $customers]);
+        } catch (\Throwable $e) {
+            return Helpers::error(null, Messages::ExceptionMessage, $e, Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    /************************************ get Branch Customer ************************************/
+    public function getRejectedCustomers($branchId)
+    {
+        try {
+            $customers = Customer::where('branch_id', $branchId)->where('status', 'rejected')
+                ->get()->map(function ($customer) {
+                    $customer->cnic_Front_image = $this->getFullUrl($customer->cnic_Front_image);
+                    $customer->cnic_Back_image = $this->getFullUrl($customer->cnic_Back_image);
+                    $customer->customer_image = $this->getFullUrl($customer->customer_image);
+                    $customer->check_image = $this->getFullUrl($customer->check_image);
+                    $customer->video = $this->getFullUrl($customer->video);
+                    if ($customer->sell_officer_id) {
+                        $sellOfficer = Employee::find($customer->sell_officer_id);
+                        $customer->sell_officer = $sellOfficer ? [
+                            'name' => $sellOfficer->name,
+                            'father_name' => $sellOfficer->father_name,
+                            'phone_number' => $sellOfficer->phone_number,
+                        ] : null;
+                    } else {
+                        $customer->sell_officer = null;
+                    }
+                    if ($customer->inquiry_officer_id) {
+                        $inquiryofficer = Employee::find($customer->inquiry_officer_id);
+                        $customer->inquiry_officer = $inquiryofficer ? [
+                            'name' => $inquiryofficer->name,
+                            'father_name' => $inquiryofficer->father_name,
+                            'phone_number' => $inquiryofficer->phone_number,
+                        ] : null;
+                    } else {
+                        $customer->sell_officer = null;
+                    }
+                    return $customer;
+                });
+
+            return Helpers::result('Branch customers retrieved successfully', Response::HTTP_OK, ['customers' => $customers]);
+        } catch (\Throwable $e) {
+            return Helpers::error(null, Messages::ExceptionMessage, $e, Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /************************************ Get Inquiry Customer ************************************/
+    public function getInquiryCustomers()
+    {
+        try {
+            $user = auth()->user();
+            $role = $user->roles->first()->name ?? 'N/A';
+            $employeeId = $user->employee->id ?? null;
+
+            // Fetch customers based on role
+            $query = Customer::where('status', 'processing');
+
+            if ($role === 'employee' && $employeeId) {
+                $query->where('inquiry_officer_id', $employeeId);
+            }
+
+            $customers = $query->get()->map(function ($customer) use ($role) {
+                $customer->cnic_Front_image = $this->getFullUrl($customer->cnic_Front_image);
+                $customer->cnic_Back_image = $this->getFullUrl($customer->cnic_Back_image);
+                $customer->customer_image = $this->getFullUrl($customer->customer_image);
+                $customer->check_image = $this->getFullUrl($customer->check_image);
+                $customer->video = $this->getFullUrl($customer->video);
+                if ($customer->sell_officer_id) {
+                    $sellOfficer = Employee::find($customer->sell_officer_id);
+                    $customer->sell_officer = $sellOfficer ? [
+                        'name' => $sellOfficer->name,
+                        'father_name' => $sellOfficer->father_name,
+                        'phone_number' => $sellOfficer->phone_number,
+                    ] : null;
+                } else {
+                    $customer->sell_officer = null;
+                }
+                // Add Inquiry Officer Details if the user is a Branch Admin
+                if ($customer->inquiry_officer_id && $role === 'branch admin') {
+                    $inquiryOfficer = Employee::find($customer->inquiry_officer_id);
+                    $customer->inquiry_officer = $inquiryOfficer ? [
+                        'id' => $inquiryOfficer->id,
+                        'name' => $inquiryOfficer->name,
+                        'father_name' => $inquiryOfficer->father_name,
+                        'phone_number' => $inquiryOfficer->phone_number,
+                    ] : null;
+                } else {
+                    $customer->inquiry_officer = null;
+                }
+
+                return $customer;
+            });
+
+            return Helpers::result('Inquiry Customers retrieved successfully', Response::HTTP_OK, ['customers' => $customers]);
+        } catch (\Throwable $e) {
+            return Helpers::error(null, Messages::ExceptionMessage, $e, Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    /************************************ Create Customer ************************************/
     public function createCustomer($request)
     {
         try {
@@ -119,6 +308,15 @@ class CustomerService
             $saleDTO = new SaleDTO($inventory, $installmentPlan, $customer->id, $employee);
             $sale = Sale::create($saleDTO->toArray());
 
+            $data = [
+                'payment_type' => 'advance',
+                'amount' => $installmentPlan->advance,
+                'customer_name' => $customer->name
+
+            ];
+            $employeeReceiptDTO = new EmployeeReceiptDTO($data, $employee);
+            $employeeReceipt = EmployeeReceipt::create($employeeReceiptDTO->toArray());
+
             // Delete inventory
             $inventory->delete();
 
@@ -126,14 +324,15 @@ class CustomerService
             return Helpers::result('Customer created successfully', Response::HTTP_CREATED, [
                 'customer' => $customer,
                 'sale' => $sale,
-                'customerAccount' => $customerAccount
+                'customerAccount' => $customerAccount,
+                'employeeReceipt' => $employeeReceipt
             ]);
         } catch (\Throwable $e) {
             DB::rollBack();
             return Helpers::error($request, Messages::ExceptionMessage, $e, Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
+    /************************************ Update Customer ************************************/
     public function updateCustomer($id, $request)
     {
         try {
@@ -141,6 +340,14 @@ class CustomerService
             $user = auth()->user();
             $employee = $user->employee;
             $role = $user->roles->first()->name ?? 'N/A';
+            $customer = Customer::findOrFail($id);
+
+            if ($request->status === 'confirmed') {
+                $guarantorExists = Guarantor::where('customer_id', $id)->exists();
+                if (!$guarantorExists) {
+                    return Helpers::result('Guarantor is required before confirming the customer', Response::HTTP_BAD_REQUEST);
+                }
+            }
 
             // Check if the provided branch_id belongs to the user's company, except for admin
             $branchId = $request->branch_id ?? $employee->branch_id;
@@ -154,42 +361,54 @@ class CustomerService
                     return Helpers::result('Invalid branch ID for the user\'s company', Response::HTTP_BAD_REQUEST);
                 }
             }
-            $customer = Customer::findOrFail($id);
-            $customerDTO = new CustomerCreateDTO($request, $employee);
-            $customer->update($customerDTO->toArray());
+            $customerData = array_merge(
+                $customer->toArray(),
+                array_filter($request->all(), fn($value, $key) => !is_null($value) && $key !== 'request_log_id', ARRAY_FILTER_USE_BOTH)
+            );
+            $customer->update($customerData);
 
+            if ($request->status === 'confirmed') {
+                Sale::where('customer_id', $id)->update(['status' => 'confirmed']);
+                CustomerAccount::where('customer_id', $id)->update(['status' => 'confirmed']);
+            }
+
+            // If customer is delivered, generate installments
+            if ($request->status === 'delivered') {
+                $customerAccount = CustomerAccount::where('customer_id', $id)->first();
+
+                if (!$customerAccount) {
+                    DB::rollBack();
+                    return Helpers::result('Customer account not found', Response::HTTP_NOT_FOUND);
+                }
+
+                // Generate Installments based on installment duration
+                $installments = [];
+
+                for ($i = 1; $i < $customerAccount->installment_duration; $i++) {
+                    $nextInstallmentDate = date('Y-m-d', strtotime('+' . $i . ' month', strtotime(date('Y-m-10'))));
+                    $installmentDTO = new InstallmentTableDTO($customerAccount, $employee);
+                    $installmentDTO->installment_date = $nextInstallmentDate;
+                    $installments[] = InstallmentTable::create($installmentDTO->toArray());
+                }
+            }
             DB::commit();
-            return Helpers::result('Customer updated successfully', Response::HTTP_OK, ['customer' => $customer]);
+            return Helpers::result('Customer updated successfully', Response::HTTP_OK, ['customer' => $customer, 'installments' => $installments ?? []]);
         } catch (\Throwable $e) {
             DB::rollBack();
             return Helpers::error($request, Messages::ExceptionMessage, $e, Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
+    /************************************ delete Customer ************************************/
     public function deleteCustomer($id)
     {
         try {
             $customer = Customer::findOrFail($id);
+            Sale::where('customer_id', $id)->delete();
+            CustomerAccount::where('customer_id', $id)->delete();
+            Guarantor::where('customer_id', $id)->delete();
             $customer->delete();
             return Helpers::result('Customer deleted successfully', Response::HTTP_OK);
-        } catch (\Throwable $e) {
-            return Helpers::error(null, Messages::ExceptionMessage, $e, Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    public function getBranchCustomers($branchId)
-    {
-        try {
-            $customers = Customer::where('branch_id', $branchId)->get()->map(function ($customer) {
-                $customer->cnic_front_image = $this->getFullUrl($customer->cnic_front_image);
-                $customer->cnic_back_image = $this->getFullUrl($customer->cnic_back_image);
-                $customer->customer_image = $this->getFullUrl($customer->customer_image);
-                $customer->check_image = $this->getFullUrl($customer->check_image);
-                $customer->video = $this->getFullUrl($customer->video);
-                return $customer;
-            });
-
-            return Helpers::result('Branch customers retrieved successfully', Response::HTTP_OK, ['customers' => $customers]);
         } catch (\Throwable $e) {
             return Helpers::error(null, Messages::ExceptionMessage, $e, Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -200,9 +419,18 @@ class CustomerService
     public function getCustomersWithoutGuarantors()
     {
         try {
-            $customers = Customer::doesntHave('guarantors')->get()->map(function ($customer) {
-                $customer->cnic_front_image = $this->getFullUrl($customer->cnic_front_image);
-                $customer->cnic_back_image = $this->getFullUrl($customer->cnic_back_image);
+            $user = auth()->user();
+            $role = $user->roles->first()->name ?? 'N/A';
+            $employee = $user->employee;
+
+            $customersQuery = Customer::doesntHave('guarantors');
+            if ($role == 'employee') {
+                $customersQuery->where('sell_officer_id', $employee->id);
+            }
+
+            $customers = $customersQuery->get()->map(function ($customer) {
+                $customer->cnic_Front_image = $this->getFullUrl($customer->cnic_Front_image);
+                $customer->cnic_Back_image = $this->getFullUrl($customer->cnic_Back_image);
                 $customer->customer_image = $this->getFullUrl($customer->customer_image);
                 $customer->check_image = $this->getFullUrl($customer->check_image);
                 $customer->video = $this->getFullUrl($customer->video);
