@@ -42,4 +42,8 @@ class Employee extends Model
     {
         return $this->hasMany(RecoveryOfficer::class, 'recovery_officer_id');
     }
+    public function employeeReceipts()
+    {
+        return $this->hasMany(EmployeeReceipt::class);
+    }
 }

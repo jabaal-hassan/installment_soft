@@ -19,6 +19,8 @@ return new class extends Migration
             $table->foreignId('customer_account_id')->constrained('customer_accounts')->onDelete('cascade');
             $table->foreignId('recived_officer_id')->constrained('employees')->onDelete('cascade');
             $table->string('product_name');
+            $table->string('status');
+            $table->date('installment_date')->nullable();
             $table->decimal('installment_price', 10, 2);
             $table->timestamps();
         });

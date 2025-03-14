@@ -12,12 +12,16 @@ use App\Models\Inventory;
 use App\Constants\Messages;
 use Illuminate\Http\Response;
 use App\Models\CustomerAccount;
+use App\Models\EmployeeReceipt;
 use App\Models\InstallmentPlan;
+use App\Models\InstallmentTable;
 use App\DTOs\CustomerDTOs\SaleDTO;
 use Illuminate\Support\Facades\DB;
 use App\DTOs\CustomerDTOs\CustomerCreateDTO;
 use App\DTOs\CustomerDTOs\CustomerAccountDTO;
 use App\DTOs\CustomerDTOs\GuarantorCreateDTO;
+use App\DTOs\EmployeeDTOs\EmployeeReceiptDTO;
+use App\DTOs\CustomerDTOs\InstallmentTableDTO;
 
 class CustomerService
 {
@@ -65,7 +69,7 @@ class CustomerService
 
 
             $customerAccount = CustomerAccount::where('customer_id', $id)->first();
-
+            $installment_table = InstallmentTable::where('customer_id', $id)->get();
             $guarantors = Guarantor::where('customer_id', $id)->first();
             if (!$guarantors) {
                 return Helpers::result('Guarantor not found', Response::HTTP_NOT_FOUND);
@@ -79,6 +83,7 @@ class CustomerService
                 'customer' => $customer,
                 'sale' => $sale,
                 'customerAccount' => $customerAccount,
+                'installmentTable' => $installment_table,
                 'guarantors' => $guarantors
             ]);
         } catch (\Throwable $e) {
@@ -128,7 +133,7 @@ class CustomerService
     public function getBranchCustomers($branchId)
     {
         try {
-            $customers = Customer::where('branch_id', $branchId)->where('status', 'confirmed')
+            $customers = Customer::where('branch_id', $branchId)->where('status', 'delivered')
                 ->get()->map(function ($customer) {
                     $customer->cnic_Front_image = $this->getFullUrl($customer->cnic_Front_image);
                     $customer->cnic_Back_image = $this->getFullUrl($customer->cnic_Back_image);
@@ -303,6 +308,15 @@ class CustomerService
             $saleDTO = new SaleDTO($inventory, $installmentPlan, $customer->id, $employee);
             $sale = Sale::create($saleDTO->toArray());
 
+            $data = [
+                'payment_type' => 'advance',
+                'amount' => $installmentPlan->advance,
+                'customer_name' => $customer->name
+
+            ];
+            $employeeReceiptDTO = new EmployeeReceiptDTO($data, $employee);
+            $employeeReceipt = EmployeeReceipt::create($employeeReceiptDTO->toArray());
+
             // Delete inventory
             $inventory->delete();
 
@@ -310,7 +324,8 @@ class CustomerService
             return Helpers::result('Customer created successfully', Response::HTTP_CREATED, [
                 'customer' => $customer,
                 'sale' => $sale,
-                'customerAccount' => $customerAccount
+                'customerAccount' => $customerAccount,
+                'employeeReceipt' => $employeeReceipt
             ]);
         } catch (\Throwable $e) {
             DB::rollBack();
@@ -357,8 +372,27 @@ class CustomerService
                 CustomerAccount::where('customer_id', $id)->update(['status' => 'confirmed']);
             }
 
+            // If customer is delivered, generate installments
+            if ($request->status === 'delivered') {
+                $customerAccount = CustomerAccount::where('customer_id', $id)->first();
+
+                if (!$customerAccount) {
+                    DB::rollBack();
+                    return Helpers::result('Customer account not found', Response::HTTP_NOT_FOUND);
+                }
+
+                // Generate Installments based on installment duration
+                $installments = [];
+
+                for ($i = 1; $i < $customerAccount->installment_duration; $i++) {
+                    $nextInstallmentDate = date('Y-m-d', strtotime('+' . $i . ' month', strtotime(date('Y-m-10'))));
+                    $installmentDTO = new InstallmentTableDTO($customerAccount, $employee);
+                    $installmentDTO->installment_date = $nextInstallmentDate;
+                    $installments[] = InstallmentTable::create($installmentDTO->toArray());
+                }
+            }
             DB::commit();
-            return Helpers::result('Customer updated successfully', Response::HTTP_OK, ['customer' => $customer]);
+            return Helpers::result('Customer updated successfully', Response::HTTP_OK, ['customer' => $customer, 'installments' => $installments ?? []]);
         } catch (\Throwable $e) {
             DB::rollBack();
             return Helpers::error($request, Messages::ExceptionMessage, $e, Response::HTTP_INTERNAL_SERVER_ERROR);
