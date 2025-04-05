@@ -96,6 +96,7 @@ Route::group(['middleware' => ['api', 'log.request', 'log.activity']], function 
                 Route::get('get-rejected-customers', 'getRejectedCustomers');
                 Route::put('update-guarantor/{id}', 'updateGuarantor');
                 Route::delete('delete-customer/{id}', 'destroy');
+                Route::post('update-installment-table/{id}', 'updateInstallmentTable');
             });
         });
 

@@ -69,7 +69,17 @@ class CustomerService
 
 
             $customerAccount = CustomerAccount::where('customer_id', $id)->first();
-            $installment_table = InstallmentTable::where('customer_id', $id)->get();
+            $installment_table = InstallmentTable::with('receivedOfficer:id,name')
+                ->where('customer_id', $id)
+                ->get()
+                ->map(function ($installment) {
+                    $installment->recived_officer_name = $installment->receivedOfficer->name;
+                    unset($installment->receivedOfficer);
+                    unset($installment->recived_officer_id);
+                    return $installment;
+                });
+
+
             $guarantors = Guarantor::where('customer_id', $id)->first();
             if (!$guarantors) {
                 return Helpers::result('Guarantor not found', Response::HTTP_NOT_FOUND);
@@ -487,6 +497,50 @@ class CustomerService
 
             DB::commit();
             return Helpers::result('Guarantor updated successfully', Response::HTTP_OK, $guarantor);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return Helpers::error($request, Messages::ExceptionMessage, $e, Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function updateInstallmentTable($id, $request)
+    {
+        try {
+            DB::beginTransaction();
+
+            $installment = InstallmentTable::find($id);
+            if (!$installment) {
+                return Helpers::result('Installment not found', Response::HTTP_NOT_FOUND);
+            }
+            $previousInstallment = InstallmentTable::where('id', '<', $id)
+                ->orderBy('id', 'desc')
+                ->first();
+            if ($previousInstallment && $previousInstallment->status == 'pending') {
+                return Helpers::result('Previous installment is still pending', Response::HTTP_BAD_REQUEST);
+            }
+
+            $installment->status = $request->status;
+
+            $installment->save();
+
+
+            $customerAccount = CustomerAccount::where('customer_id', $installment->customer_id)->first();
+
+            if ($customerAccount) {
+
+                if (isset($installment->installment_price) && is_numeric($installment->installment_price)) {
+                    $installmentPrice = $installment->installment_price;
+                    $customerAccount->remaining_amount -= $installmentPrice;
+                    $customerAccount->amount_paid += $installmentPrice;
+                    $customerAccount->save();
+                } else {
+                    return Helpers::result('Invalid installment price specified', Response::HTTP_BAD_REQUEST);
+                }
+            } else {
+                return Helpers::result('Customer account not found', Response::HTTP_NOT_FOUND);
+            }
+            DB::commit();
+            return Helpers::result('Installment updated successfully', Response::HTTP_OK, $installment);
         } catch (\Throwable $e) {
             DB::rollBack();
             return Helpers::error($request, Messages::ExceptionMessage, $e, Response::HTTP_INTERNAL_SERVER_ERROR);

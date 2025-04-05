@@ -80,4 +80,8 @@ class CustomerController extends Controller
     {
         return $this->customerService->updateGuarantor($id, $request);
     }
+    public function updateInstallmentTable(Request $request, $id)
+    {
+        return $this->customerService->updateInstallmentTable($id, $request);
+    }
 }
