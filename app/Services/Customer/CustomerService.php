@@ -503,6 +503,8 @@ class CustomerService
         }
     }
 
+    /************************************ update InstallmentTable ************************************/
+
     public function updateInstallmentTable($id, $request)
     {
         try {
@@ -547,6 +549,50 @@ class CustomerService
         }
     }
 
+    /************************************ getCurrentMonthInstallmentsWithPending ************************************/
+
+    public function getCurrentMonthInstallmentsWithPending()
+    {
+        try {
+            $user = auth()->user();
+            $currentMonth = now()->month;
+            $currentYear = now()->year;
+
+            $currentMonthPendingInstallments = InstallmentTable::where('status', 'pending')
+                ->whereMonth('installment_date', $currentMonth)
+                ->whereYear('installment_date', $currentYear);
+
+
+            $pendingPreviousInstallments = InstallmentTable::where('status', 'pending')
+                ->where(function ($query) use ($currentMonth, $currentYear) {
+                    $query->whereMonth('installment_date', '<', $currentMonth)
+                        ->orWhereYear('installment_date', '<', $currentYear);
+                });
+
+
+            $query = InstallmentTable::where('status', 'pending')
+                ->where(function ($q) use ($currentMonthPendingInstallments, $pendingPreviousInstallments) {
+                    $q->whereIn('id', $currentMonthPendingInstallments->select('id'))
+                        ->orWhereIn('id', $pendingPreviousInstallments->select('id'));
+                })
+                ->with('customer');
+
+
+            if ($user->role == 'employee') {
+                $query->where('employee_id', $user->id);
+            }
+
+            $installments = $query->get();
+
+            if ($installments->isEmpty()) {
+                return Helpers::result('No pending installments found', Response::HTTP_NOT_FOUND);
+            }
+
+            return Helpers::result('Pending installments retrieved successfully', Response::HTTP_OK, $installments);
+        } catch (\Throwable $e) {
+            return Helpers::error(null, Messages::ExceptionMessage, $e, Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
     private function getFullUrl($path)
     {
         return !empty($path) ? (filter_var($path, FILTER_VALIDATE_URL) ? $path : asset('storage/' . $path)) : null;

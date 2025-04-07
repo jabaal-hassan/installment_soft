@@ -84,4 +84,9 @@ class CustomerController extends Controller
     {
         return $this->customerService->updateInstallmentTable($id, $request);
     }
+    public function getCurrentMonthInstallmentsWithPending()
+    {
+
+        return $this->customerService->getCurrentMonthInstallmentsWithPending();
+    }
 }

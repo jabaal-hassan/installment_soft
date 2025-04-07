@@ -111,6 +111,7 @@ Route::group(['middleware' => ['api', 'log.request', 'log.activity']], function 
                 Route::get('get-customer/{id}', 'show');
                 Route::post('add-guarantor', 'addGuarantor');
                 Route::get('get-inquiry-customers', 'getInquiryCustomers');
+                Route::get('get-current-month-installments', 'getCurrentMonthInstallmentsWithPending');
             });
             Route::controller(InstallmentPlanController::class)->group(function () {
                 Route::get('get-all-installment-plans', 'index');
