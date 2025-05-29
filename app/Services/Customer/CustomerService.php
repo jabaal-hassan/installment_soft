@@ -530,9 +530,11 @@ class CustomerService
             if (!$installment) {
                 return Helpers::result('Installment not found', Response::HTTP_NOT_FOUND);
             }
-            $previousInstallment = InstallmentTable::where('id', '<', $id)
+            $previousInstallment = InstallmentTable::where('customer_id', $installment->customer_id)
+                ->where('id', '<', $id)
                 ->orderBy('id', 'desc')
                 ->first();
+
             if ($previousInstallment && $previousInstallment->status == 'pending') {
                 return Helpers::result('Previous installment is still pending', Response::HTTP_BAD_REQUEST);
             }
