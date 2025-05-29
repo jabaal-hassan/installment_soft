@@ -42,7 +42,6 @@ class AuthService
     public function login($request)
     {
         try {
-
             $credentials = $request->only(['email', 'password']);
 
             // Attempt to authenticate the user

@@ -382,25 +382,41 @@ class CustomerService
                 CustomerAccount::where('customer_id', $id)->update(['status' => 'confirmed']);
             }
 
-            // If customer is delivered, generate installments
             if ($request->status === 'delivered') {
-                $customerAccount = CustomerAccount::where('customer_id', $id)->first();
+    $customerAccount = CustomerAccount::where('customer_id', $id)->first();
 
-                if (!$customerAccount) {
-                    DB::rollBack();
-                    return Helpers::result('Customer account not found', Response::HTTP_NOT_FOUND);
-                }
+    if (!$customerAccount) {
+        DB::rollBack();
+        return Helpers::result('Customer account not found', Response::HTTP_NOT_FOUND);
+    }
 
-                // Generate Installments based on installment duration
-                $installments = [];
+    // Generate Installments based on installment duration
+    $installments = [];
+    $duration = $customerAccount->installment_duration;
+    $today = date('Y-m-d');
+    $firstInstallmentDate = date('Y-m-d');
 
-                for ($i = 1; $i < $customerAccount->installment_duration; $i++) {
-                    $nextInstallmentDate = date('Y-m-d', strtotime('+' . $i . ' month', strtotime(date('Y-m-10'))));
-                    $installmentDTO = new InstallmentTableDTO($customerAccount, $employee);
-                    $installmentDTO->installment_date = $nextInstallmentDate;
-                    $installments[] = InstallmentTable::create($installmentDTO->toArray());
-                }
-            }
+    if ($duration <= 12) {
+
+        $interval = 'month';
+        $firstInstallmentDate = date('Y-m-10'); 
+    } elseif ($duration <= 30) {
+        $interval = 'week';
+        $firstInstallmentDate = date('Y-m-d', strtotime($today . ' +7 days')); 
+    } else {
+        // Daily installments (for 30+ installments)
+        $interval = 'day';
+        $firstInstallmentDate = date('Y-m-d', strtotime($today . ' +1 day'));
+    }
+
+    for ($i = 0; $i < $duration; $i++) {
+        $installmentDate = date('Y-m-d', strtotime($firstInstallmentDate . " +$i $interval"));
+        
+        $installmentDTO = new InstallmentTableDTO($customerAccount, $employee);
+        $installmentDTO->installment_date = $installmentDate;
+        $installments[] = InstallmentTable::create($installmentDTO->toArray());
+    }
+}
             DB::commit();
             return Helpers::result('Customer updated successfully', Response::HTTP_OK, ['customer' => $customer, 'installments' => $installments ?? []]);
         } catch (\Throwable $e) {
@@ -551,48 +567,51 @@ class CustomerService
 
     /************************************ getCurrentMonthInstallmentsWithPending ************************************/
 
-    public function getCurrentMonthInstallmentsWithPending()
-    {
-        try {
-            $user = auth()->user();
-            $currentMonth = now()->month;
-            $currentYear = now()->year;
-
-            $currentMonthPendingInstallments = InstallmentTable::where('status', 'pending')
-                ->whereMonth('installment_date', $currentMonth)
-                ->whereYear('installment_date', $currentYear);
+   public function getCurrentMonthInstallmentsWithPending()
+{
+    try {
+        $user = auth()->user();
+        $currentDate = now();
+        $currentMonth = $currentDate->month;
+        $currentYear = $currentDate->year;
 
 
-            $pendingPreviousInstallments = InstallmentTable::where('status', 'pending')
-                ->where(function ($query) use ($currentMonth, $currentYear) {
-                    $query->whereMonth('installment_date', '<', $currentMonth)
-                        ->orWhereYear('installment_date', '<', $currentYear);
-                });
+        $currentMonthPendingInstallments = InstallmentTable::where('status', 'pending')
+            ->whereMonth('installment_date', $currentMonth)
+            ->whereYear('installment_date', $currentYear);
 
 
-            $query = InstallmentTable::where('status', 'pending')
-                ->where(function ($q) use ($currentMonthPendingInstallments, $pendingPreviousInstallments) {
-                    $q->whereIn('id', $currentMonthPendingInstallments->select('id'))
-                        ->orWhereIn('id', $pendingPreviousInstallments->select('id'));
-                })
-                ->with('customer');
+        $pendingPreviousInstallments = InstallmentTable::where('status', 'pending')
+            ->where(function($query) use ($currentDate) {
+                $query->whereYear('installment_date', '<', $currentDate->year)
+                    ->orWhere(function($q) use ($currentDate) {
+                        $q->whereYear('installment_date', $currentDate->year)
+                          ->whereMonth('installment_date', '<', $currentDate->month);
+                    });
+            });
 
+        $query = InstallmentTable::where('status', 'pending')
+            ->where(function($q) use ($currentMonthPendingInstallments, $pendingPreviousInstallments) {
+                $q->whereIn('id', $currentMonthPendingInstallments->select('id'))
+                  ->orWhereIn('id', $pendingPreviousInstallments->select('id'));
+            })
+            ->with('customer');
 
-            if ($user->role == 'employee') {
-                $query->where('employee_id', $user->id);
-            }
-
-            $installments = $query->get();
-
-            if ($installments->isEmpty()) {
-                return Helpers::result('No pending installments found', Response::HTTP_NOT_FOUND);
-            }
-
-            return Helpers::result('Pending installments retrieved successfully', Response::HTTP_OK, $installments);
-        } catch (\Throwable $e) {
-            return Helpers::error(null, Messages::ExceptionMessage, $e, Response::HTTP_INTERNAL_SERVER_ERROR);
+        if ($user->role == 'employee') {
+            $query->where('employee_id', $user->id);
         }
+
+        $installments = $query->get();
+
+        if ($installments->isEmpty()) {
+            return Helpers::result('No pending installments found', Response::HTTP_NOT_FOUND);
+        }
+
+        return Helpers::result('Pending installments retrieved successfully', Response::HTTP_OK, $installments);
+    } catch (\Throwable $e) {
+        return Helpers::error(null, Messages::ExceptionMessage, $e, Response::HTTP_INTERNAL_SERVER_ERROR);
     }
+}
     private function getFullUrl($path)
     {
         return !empty($path) ? (filter_var($path, FILTER_VALIDATE_URL) ? $path : asset('storage/' . $path)) : null;

@@ -25,7 +25,7 @@ class SendPasswordSetupEmail extends Mailable
 
         // Force a default if env is empty or malformed
         if (empty($frontendUrl) || !parse_url($frontendUrl)) {
-            $frontendUrl = 'http://localhost:5173';
+            $frontendUrl = 'http://localhost:5174';
             Log::info('Using default frontend URL: ' . $frontendUrl);
         }
 
